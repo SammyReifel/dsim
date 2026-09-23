@@ -11,13 +11,14 @@
  */
 import * as C from '../src/config';
 import { initPhysics } from '../src/sim/physicsEngine';
-import { createWorld, DEFAULT_ASSISTS, DEFAULT_SPEC, type RobotSetup } from '../src/sim/spawn';
-import { step } from '../src/sim/world';
+import { DEFAULT_ASSISTS, DEFAULT_SPEC, type RobotSetup } from '../src/sim/spawn';
+import { simModuleFor } from '../src/games/sim';
+import { BB_DEFAULT_SPEC } from '../src/games/biobuzz/coerce';
 import { localizeCommand } from '../src/net/protocol';
 import { makeBots } from '../src/bots/opponentBot';
 import type { BotLevel, BotStyle } from '../src/bots/botConfig';
 import { ReplayRecorder, ReplayPlayer } from '../src/sim/replay';
-import type { RobotCommand, World } from '../src/types';
+import type { GameId, RobotCommand, World } from '../src/types';
 
 await initPhysics();
 
@@ -31,15 +32,16 @@ function check(name: string, ok: boolean, detail = ''): void {
 
 const IDLE: RobotCommand = { driveX: 0, driveY: 0, rotate: 0, leftDrive: 0, rightDrive: 0, intake: false, fire: false };
 
-function setups(n: number): RobotSetup[] {
+function setups(n: number, game: GameId): RobotSetup[] {
+  const spec = game === 'biobuzz' ? BB_DEFAULT_SPEC : DEFAULT_SPEC;
   const s: RobotSetup[] = [
-    { id: 0, alliance: 'blue', spec: DEFAULT_SPEC, assists: DEFAULT_ASSISTS, startIndex: 0 },
+    { id: 0, alliance: 'blue', spec, assists: DEFAULT_ASSISTS, startIndex: 0 },
   ];
   for (let i = 0; i < n; i++) {
     s.push({
       id: 2 + i,
       alliance: 'red',
-      spec: { ...DEFAULT_SPEC, name: `Bot ${i + 1}` },
+      spec: { ...spec, name: `Bot ${i + 1}` },
       assists: { ...DEFAULT_ASSISTS, autoIntake: true, autoFire: true },
       startIndex: i,
     });
@@ -55,11 +57,19 @@ interface Run {
   recorder: ReplayRecorder;
 }
 
-function runMatch(n: number, style: BotStyle, level: BotLevel, seed: number, maxTicks = Infinity): Run {
-  const su = setups(n);
-  const w = createWorld('match', seed, su);
+function runMatch(
+  n: number,
+  style: BotStyle,
+  level: BotLevel,
+  seed: number,
+  maxTicks = Infinity,
+  game: GameId = 'decode',
+): Run {
+  const su = setups(n, game);
+  const mod = simModuleFor(game);
+  const w = mod.createWorld('match', seed, su);
   w.match.preCountdown = C.PRE_COUNTDOWN; // exactly what GameController.startMatch does
-  const rec = new ReplayRecorder(seed, su, 'match', 'decode');
+  const rec = new ReplayRecorder(seed, su, 'match', game);
   const bots = makeBots(su.filter((s) => s.id !== 0).map((s) => s.id), style, level);
   const travelled = new Map<number, number>();
   let minGap = Infinity;
@@ -69,7 +79,7 @@ function runMatch(n: number, style: BotStyle, level: BotLevel, seed: number, max
     const cmds = new Map<number, RobotCommand>([[0, localizeCommand(IDLE)]]);
     for (const b of bots) cmds.set(b.robotId, localizeCommand(b.command(w, 0)));
     const before = new Map(w.robots.map((r) => [r.id, { ...r.pos }]));
-    step(w, C.SIM_DT, cmds);
+    mod.step(w, C.SIM_DT, cmds);
     rec.record(w.tick, cmds);
     ticks++;
     const player = w.robots.find((r) => r.id === 0)!;
@@ -126,6 +136,35 @@ for (const level of ['easy', 'normal'] as BotLevel[]) {
   const b = p.world.robots.map((x) => `${x.pos.x.toFixed(4)},${x.pos.y.toFixed(4)}`).join('|');
   check('bot run replays identically', a === b);
   check('bot run replay score matches', p.world.match.scores.red.total === r.world.match.scores.red.total);
+}
+
+// 6. BIOBUZZ: a scorer TIPS its hive, repeatedly, without fouling anyone
+{
+  const r = runMatch(1, 'scorer', 'normal', 7, Infinity, 'biobuzz');
+  const tips = r.world.biobuzz?.hives.red.tips ?? 0;
+  check('biobuzz scorer tips its hive several times', tips >= 3, `${tips} tips`);
+  check('biobuzz scorer scores', r.world.match.scores.red.total > 60, `red ${r.world.match.scores.red.total}`);
+  check('biobuzz scorer commits no fouls', r.world.match.fouls.red.major + r.world.match.fouls.red.minor === 0,
+    JSON.stringify(r.world.match.fouls.red));
+  check('biobuzz scorer never leaves the field', !r.outOfField);
+}
+
+// 7. BIOBUZZ: a defender guards without pinning (G421 is a MAJOR every 3 s)
+{
+  const r = runMatch(1, 'defender', 'hard', 3, Infinity, 'biobuzz');
+  check('biobuzz defender closes on the player', r.minGap < 45, `closest ${r.minGap.toFixed(1)}in`);
+  check('biobuzz defender commits no majors', r.world.match.fouls.red.major === 0, JSON.stringify(r.world.match.fouls.red));
+}
+
+// 8. BIOBUZZ: a mixed pair scores and replays
+{
+  const r = runMatch(2, 'mixed', 'normal', 5, Infinity, 'biobuzz');
+  check('biobuzz mixed pair tips the hive', (r.world.biobuzz?.hives.red.tips ?? 0) >= 2);
+  check('biobuzz mixed pair commits no majors', r.world.match.fouls.red.major === 0, JSON.stringify(r.world.match.fouls.red));
+  const replay = JSON.parse(JSON.stringify(r.recorder.finish()));
+  const p = new ReplayPlayer(replay);
+  while (p.world.tick < r.world.tick) p.stepOnce();
+  check('biobuzz bot run replay score matches', p.world.match.scores.red.total === r.world.match.scores.red.total);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

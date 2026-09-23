@@ -33,6 +33,7 @@ import { MatchAudio } from './audio';
 import type { MatchResultInfo, NetSession, NetStatus, Snapshot } from './net/session';
 import { localizeCommand } from './net/protocol';
 import { makeBots, MAX_OPPONENT_BOTS, type OpponentBot } from './bots/opponentBot';
+import { BB_DEFAULT_SPEC } from './games/biobuzz/coerce';
 import { clamp } from './math';
 import type { RecordRankInfo } from './net/protocol';
 
@@ -488,7 +489,13 @@ export class GameController {
         setups.push({
           id,
           alliance: opp,
-          spec: { ...DEFAULT_SPEC, name: `Bot ${i + 1}`, teamName: 'Opponent bot', teamNumber: 0 },
+          // BIOBUZZ bots drive its default build (a turret, which aims itself), not DECODE's
+          spec: {
+            ...(this.gameId === 'biobuzz' ? BB_DEFAULT_SPEC : DEFAULT_SPEC),
+            name: `Bot ${i + 1}`,
+            teamName: 'Opponent bot',
+            teamNumber: 0,
+          },
           assists: { ...DEFAULT_ASSISTS, fieldCentric: true, autoIntake: true, autoFire: true },
           startIndex: i,
         });

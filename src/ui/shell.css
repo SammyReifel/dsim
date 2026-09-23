@@ -1712,6 +1712,16 @@ button.ds-chip {
 .ds-tileset + .ds-tileset {
   margin-top: 20px;
 }
+/* the OPPONENT BOTS picker (BotOptions): stacked option rows, under the offline tiles on the
+   mode select and inside Configure → Match setup */
+.ds-botpick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ds-tileset-label.ds-botpick-label {
+  margin-top: 20px;
+}
 .ds-tileset-label {
   font-family: var(--ds-font-mono);
   font-size: 12px;

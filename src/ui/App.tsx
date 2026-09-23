@@ -1546,6 +1546,8 @@ export function App() {
 
       {screen === 'modes' && (
         <ModeSelect
+          settings={settings}
+          onSettings={(patch) => update({ ...settings, ...patch })}
           multiplayer={multiplayer}
           signedIn={signedIn}
           activeGame={activeGame ? { kind: activeGame.kind } : null}
