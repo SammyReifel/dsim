@@ -750,9 +750,7 @@ export interface GameSettings {
   practiceDummies: boolean;
   /** computer-driven OPPONENT robots in solo practice + free drive (0..2, `src/bots/`) */
   opponentBots: number;
-  /** what the opponent bots do: collect + shoot, shadow the player, or one of each */
-  botStyle: import('./bots/botConfig').BotStyle;
-  /** how fast the bots drive (and, for scorers, how much they carry before shooting) */
+  /** how the bots play: Easy / Normal just play the game; Hard coordinates and defends */
   botLevel: import('./bots/botConfig').BotLevel;
   /** the ACTIVE resolved driver assists (what spawns + goes on the wire).
    * MIRRORED from `spec.assists`, which is where the preference is actually STORED — the
