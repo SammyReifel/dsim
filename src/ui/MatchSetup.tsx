@@ -251,7 +251,7 @@ export function MatchSetup({
       </section>
 
       <section className="ds-sec">
-        <h2>Opponent bots</h2>
+        <h2>Bots</h2>
         <BotOptions settings={settings} onChange={set} />
       </section>
 

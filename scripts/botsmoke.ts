@@ -54,15 +54,17 @@ function runMatch(
   n: number,
   level: BotLevel,
   seed: number,
-  opts: { player?: 'idle' | 'bot'; maxTicks?: number } = {},
+  opts: { player?: 'idle' | 'bot'; maxTicks?: number; partner?: BotLevel } = {},
 ): Run {
   const mod = simModuleFor(game);
   const su = [botSetup(game, 0, 'blue', 0)];
-  for (let i = 0; i < n; i++) su.push(botSetup(game, 2 + i, 'red', i));
+  for (let i = 0; i < n; i++) su.push(botSetup(game, 2 + i, 'red', i, { level }));
+  if (opts.partner) su.push(botSetup(game, 1, 'blue', 1, { level: opts.partner, name: 'Teammate' }));
   const w = mod.createWorld('match', seed, su);
   w.match.preCountdown = C.PRE_COUNTDOWN; // exactly what GameController.startMatch does
   const rec = new ReplayRecorder(seed, su, 'match', game);
-  const bots = makeBots(su.filter((s) => s.id !== 0).map((s) => s.id), level);
+  const bots = makeBots(su.filter((s) => s.alliance === 'red').map((s) => s.id), level);
+  const mates = opts.partner ? makeBots([1], opts.partner, 1) : [];
   const player = opts.player === 'bot' ? makeBots([0], 'normal')[0] : null;
   const travelled = new Map<number, number>();
   let outOfField = false;
@@ -74,12 +76,12 @@ function runMatch(
   const maxTicks = opts.maxTicks ?? Infinity;
   while (w.match.phase !== 'post' && ticks < maxTicks) {
     const cmds = new Map<number, RobotCommand>([[0, localizeCommand(player ? player.command(w, 2) : IDLE)]]);
-    for (const b of bots) cmds.set(b.robotId, localizeCommand(b.command(w, 0)));
+    for (const b of [...bots, ...mates]) cmds.set(b.robotId, localizeCommand(b.command(w, 0)));
     const before = new Map(w.robots.map((r) => [r.id, { ...r.pos }]));
     mod.step(w, C.SIM_DT, cmds);
     rec.record(w.tick, cmds);
     ticks++;
-    if (bots[0]?.team.defenderId != null) defendTicks++;
+    if ([...bots, ...mates].some((b) => b.team.defenderId != null)) defendTicks++;
     const p = w.robots.find((r) => r.id === 0)!;
     for (const r of w.robots) {
       const q = before.get(r.id)!;
@@ -93,7 +95,7 @@ function runMatch(
       if (maxRamp >= 9 && ramp <= 4) rampDrained = true;
     }
   }
-  return { world: w, bots, travelled, outOfField, defendTicks, nearPlayer, maxRamp, rampDrained, recorder: rec };
+  return { world: w, bots: [...bots, ...mates], travelled, outOfField, defendTicks, nearPlayer, maxRamp, rampDrained, recorder: rec };
 }
 
 const majors = (w: World): number => w.match.fouls.red.major;
@@ -134,6 +136,27 @@ function replays(name: string, r: Run): void {
 }
 replays('decode hard pair (45s)', runMatch('decode', 2, 'hard', 9, { player: 'bot', maxTicks: 60 * 45 }));
 
+// NIGHTMARE: plays to win. Against an idle player there is nothing to defend and no lead
+// worth protecting by standing still — it just scores. Against a real opponent it wins.
+{
+  const r = runMatch('decode', 2, 'nightmare', 5, { player: 'idle' });
+  check('decode nightmare vs idle: never defends a player carrying nothing', r.defendTicks === 0);
+  check('decode nightmare vs idle: scores big', redTotal(r.world) > 250, `red ${redTotal(r.world)}`);
+}
+{
+  const r = runMatch('decode', 2, 'nightmare', 5, { player: 'bot' });
+  const blue = r.world.match.scores.blue.total;
+  check('decode nightmare pair: outscores a normal opponent', redTotal(r.world) > blue, `${redTotal(r.world)} vs ${blue}`);
+  check('decode nightmare pair: no majors', majors(r.world) === 0, JSON.stringify(r.world.match.fouls.red));
+}
+// TEAMMATE: a bot on the player's own alliance scores for it and never defends anyone
+{
+  const r = runMatch('decode', 0, 'normal', 7, { partner: 'normal' });
+  check('decode teammate: scores for the player’s alliance', r.world.match.scores.blue.total > 60, `blue ${r.world.match.scores.blue.total}`);
+  check('decode teammate: never defends', r.defendTicks === 0);
+  check('decode teammate: commits no majors', r.world.match.fouls.blue.major === 0, JSON.stringify(r.world.match.fouls.blue));
+}
+
 // ── BIOBUZZ ─────────────────────────────────────────────────────────────────
 {
   const r = runMatch('biobuzz', 1, 'normal', 7);
@@ -162,6 +185,18 @@ replays('decode hard pair (45s)', runMatch('decode', 2, 'hard', 9, { player: 'bo
   check('biobuzz hard pair: defends while the player carries', r.defendTicks > 300, `${r.defendTicks} ticks`);
   check('biobuzz hard pair: no majors', majors(r.world) === 0, JSON.stringify(r.world.match.fouls.red));
   replays('biobuzz hard pair', r);
+}
+
+{
+  const r = runMatch('biobuzz', 2, 'nightmare', 5, { player: 'bot' });
+  const blue = r.world.match.scores.blue.total;
+  check('biobuzz nightmare pair: outscores a normal opponent', redTotal(r.world) > blue, `${redTotal(r.world)} vs ${blue}`);
+  check('biobuzz nightmare pair: no majors', majors(r.world) === 0, JSON.stringify(r.world.match.fouls.red));
+}
+{
+  const r = runMatch('biobuzz', 1, 'normal', 9, { partner: 'normal' });
+  check('biobuzz teammate: tips the player’s hive', (r.world.biobuzz?.hives.blue.tips ?? 0) >= 2, `${r.world.biobuzz?.hives.blue.tips} tips`);
+  check('biobuzz teammate: commits no majors', r.world.match.fouls.blue.major === 0, JSON.stringify(r.world.match.fouls.blue));
 }
 
 // ── CHAIN REACTION ──────────────────────────────────────────────────────────

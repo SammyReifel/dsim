@@ -750,7 +750,10 @@ export interface GameSettings {
   practiceDummies: boolean;
   /** computer-driven OPPONENT robots in solo practice + free drive (0..2, `src/bots/`) */
   opponentBots: number;
-  /** how the bots play: Easy / Normal just play the game; Hard coordinates and defends */
+  /** a computer-driven TEAMMATE on the player's own alliance (robot id 1) */
+  botPartner: boolean;
+  /** how the bots play: Easy / Normal just play the game; Hard coordinates and defends;
+   * Nightmare plays flat out to win */
   botLevel: import('./bots/botConfig').BotLevel;
   /** the ACTIVE resolved driver assists (what spawns + goes on the wire).
    * MIRRORED from `spec.assists`, which is where the preference is actually STORED — the

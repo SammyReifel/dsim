@@ -74,7 +74,7 @@ export function ModeSelect({
             </span>
           </button>
         </div>
-        <p className="ds-tileset-label ds-botpick-label">Opponent bots</p>
+        <p className="ds-tileset-label ds-botpick-label">Bots</p>
         <BotOptions settings={settings} onChange={onSettings} />
       </section>
 

@@ -5,6 +5,8 @@ import { bbCoerceSpec } from '../games/biobuzz/robotConfig';
 import { bbLauncherOf } from '../games/biobuzz/mechs';
 import { BB_HOOD_DEFAULT_DEG } from '../games/biobuzz/config';
 import type { RobotSpec } from '../types';
+import { rpmLimits } from '../sim/drivetrain';
+import type { BotLevel } from './botConfig';
 
 /**
  * WHAT A BOT DRIVES. One function, so the game and the bot tests spawn the same robot.
@@ -16,15 +18,30 @@ import type { RobotSpec } from '../types';
  * itself and launches NECTAR as well as POLLEN (which the Sniper's single turret cannot even
  * carry, `bbIntakeAccepts`), and the tube places into the FLOWERS.
  */
-export function botSetup(game: GameId, id: number, alliance: Alliance, index: number): RobotSetup {
+export function botSetup(
+  game: GameId,
+  id: number,
+  alliance: Alliance,
+  startIndex: number,
+  opts: { level?: BotLevel; name?: string; teamName?: string } = {},
+): RobotSetup {
   const bb = game === 'biobuzz';
   const base = bb ? BB_BOT_SPEC : DEFAULT_SPEC;
+  // NIGHTMARE gears its drivetrain as fast as the builder allows. Still a legal robot — the
+  // same `rpmLimits` envelope the builder's slider offers anyone — just the fastest one.
+  const driveRpm = opts.level === 'nightmare' ? rpmLimits(base.drivetrain).max : base.driveRpm;
   return {
     id,
     alliance,
-    spec: { ...base, name: `Bot ${index + 1}`, teamName: 'Opponent bot', teamNumber: 0 },
+    spec: {
+      ...base,
+      driveRpm,
+      name: opts.name ?? `Bot ${startIndex + 1}`,
+      teamName: opts.teamName ?? 'Opponent bot',
+      teamNumber: 0,
+    },
     assists: { ...DEFAULT_ASSISTS, fieldCentric: true, autoIntake: !bb, autoFire: !bb },
-    startIndex: index,
+    startIndex,
   };
 }
 

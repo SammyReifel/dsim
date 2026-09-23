@@ -477,18 +477,33 @@ export class GameController {
         autoPathEnabled: s.autoPathEnabled,
       },
     ];
-    // OPPONENT BOTS take the opposing slots (ids 2, 3) — ordinary robots driven by `src/bots/`
+    // BOTS (`src/bots/`) are ordinary robots driven by a controller: OPPONENTS take the
+    // opposing slots (ids 2, 3), a TEAMMATE the player's partner slot (id 1)
     const botCount = this.session ? 0 : Math.max(0, Math.min(MAX_OPPONENT_BOTS, s.opponentBots ?? 0));
+    const level = s.botLevel ?? 'normal';
     const botIds: number[] = [];
     if (botCount > 0) {
       const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';
       for (let i = 0; i < botCount; i++) {
         const id = 2 + i;
         botIds.push(id);
-        setups.push(botSetup(this.gameId, id, opp, i));
+        setups.push(botSetup(this.gameId, id, opp, i, { level }));
       }
     }
-    this.bots = makeBots(botIds, s.botLevel ?? 'normal');
+    this.bots = makeBots(botIds, level);
+    // A TEAMMATE BOT takes the player's partner slot (id 1) and the start the player is NOT
+    // on. Its own team of one, so it never defends: its "player" is on its own alliance.
+    const partner = !this.session && !!s.botPartner;
+    if (partner) {
+      setups.push(
+        botSetup(this.gameId, 1, s.alliance, s.startIndex === 1 ? 0 : 1, {
+          level,
+          name: 'Teammate',
+          teamName: 'Teammate bot',
+        }),
+      );
+      this.bots.push(...makeBots([1], level, 1));
+    }
     if (s.mode === 'free' && s.practiceDummies) {
       // three idle default robots as physical obstacles / parking practice
       const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';
@@ -503,8 +518,9 @@ export class GameController {
         startIndex,
         passive: true,
       });
-      // the partner dummy takes the OTHER preset so it never overlaps the player
-      setups.push(dummy(1, s.alliance, s.startIndex === 1 ? 0 : 1));
+      // the partner dummy takes the OTHER preset so it never overlaps the player — unless a
+      // teammate bot already has that slot
+      if (!partner) setups.push(dummy(1, s.alliance, s.startIndex === 1 ? 0 : 1));
       // opponent dummies fill only the slots no bot is driving
       if (botCount < 1) setups.push(dummy(2, opp, 0));
       if (botCount < 2) setups.push(dummy(3, opp, 1));
