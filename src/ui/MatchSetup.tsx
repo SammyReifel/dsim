@@ -15,6 +15,18 @@ import { useAds } from '../ads/AdsProvider';
 import { selectStart, switchCategory, saveStart, deleteSavedStart } from './startPositions';
 import { ChainStartEditor } from './ChainStartEditor';
 import { moduleFor } from '../games';
+import type { BotLevel, BotStyle } from '../bots/botConfig';
+
+const BOT_STYLE_OPTS: [BotStyle, string][] = [
+  ['mixed', 'Mixed'],
+  ['scorer', 'Scorers'],
+  ['defender', 'Defenders'],
+];
+const BOT_LEVEL_OPTS: [BotLevel, string][] = [
+  ['easy', 'Easy'],
+  ['normal', 'Normal'],
+  ['hard', 'Hard'],
+];
 
 /**
  * Match configuration — the pre-game options that belong to the MATCH, not the
@@ -247,6 +259,50 @@ export function MatchSetup({
             <span className="ot">Practice dummies {settings.practiceDummies ? 'ON' : 'OFF'}</span>
           </button>
         </div>
+      </section>
+
+      <section className="ds-sec">
+        <h2>Opponent bots</h2>
+        <div className="ds-opts fill">
+          {[0, 1, 2].map((n) => (
+            <button
+              key={n}
+              className={`ds-opt mini ${(settings.opponentBots ?? 0) === n ? 'on' : ''}`}
+              onClick={() => set({ opponentBots: n })}
+            >
+              <span className="ot">{n === 0 ? 'None' : `${n} bot${n > 1 ? 's' : ''}`}</span>
+            </button>
+          ))}
+        </div>
+        {(settings.opponentBots ?? 0) > 0 && (
+          <>
+            <div className="ds-opts fill">
+              {BOT_STYLE_OPTS.map(([k, label]) => (
+                <button
+                  key={k}
+                  className={`ds-opt mini ${settings.botStyle === k ? 'on' : ''}`}
+                  onClick={() => set({ botStyle: k })}
+                >
+                  <span className="ot">{label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="ds-opts fill">
+              {BOT_LEVEL_OPTS.map(([k, label]) => (
+                <button
+                  key={k}
+                  className={`ds-opt mini ${settings.botLevel === k ? 'on' : ''}`}
+                  onClick={() => set({ botLevel: k })}
+                >
+                  <span className="ot">{label}</span>
+                </button>
+              ))}
+            </div>
+            {!isDecode && (
+              <p className="ds-hint">Bots only play defence outside DECODE.</p>
+            )}
+          </>
+        )}
       </section>
 
       {runsAutoPaths && (

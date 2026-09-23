@@ -32,6 +32,7 @@ import { Renderer } from './render/renderer';
 import { MatchAudio } from './audio';
 import type { MatchResultInfo, NetSession, NetStatus, Snapshot } from './net/session';
 import { localizeCommand } from './net/protocol';
+import { makeBots, MAX_OPPONENT_BOTS, type OpponentBot } from './bots/opponentBot';
 import { clamp } from './math';
 import type { RecordRankInfo } from './net/protocol';
 
@@ -274,6 +275,8 @@ export class GameController {
   /** records the solo practice run in flight; null when not recording (free drive, or
    *  multiplayer, where the SERVER owns the recording) */
   private recorder: ReplayRecorder | null = null;
+  /** the solo world's computer-driven opponents (`src/bots/`); empty online */
+  private bots: OpponentBot[] = [];
   /**
    * Ticks of the run in flight on which the robots were actually ENABLED — the length
    * `src/replaySavePolicy.ts` judges an abandoned run by.
@@ -473,6 +476,25 @@ export class GameController {
         autoPathEnabled: s.autoPathEnabled,
       },
     ];
+    // OPPONENT BOTS take the opposing slots (ids 2, 3). They are ordinary robots with every
+    // assist on — auto intake and auto fire do the mechanism work, the brain only drives.
+    const botCount = this.session ? 0 : Math.max(0, Math.min(MAX_OPPONENT_BOTS, s.opponentBots ?? 0));
+    const botIds: number[] = [];
+    if (botCount > 0) {
+      const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';
+      for (let i = 0; i < botCount; i++) {
+        const id = 2 + i;
+        botIds.push(id);
+        setups.push({
+          id,
+          alliance: opp,
+          spec: { ...DEFAULT_SPEC, name: `Bot ${i + 1}`, teamName: 'Opponent bot', teamNumber: 0 },
+          assists: { ...DEFAULT_ASSISTS, fieldCentric: true, autoIntake: true, autoFire: true },
+          startIndex: i,
+        });
+      }
+    }
+    this.bots = makeBots(botIds, s.botStyle ?? 'mixed', s.botLevel ?? 'normal');
     if (s.mode === 'free' && s.practiceDummies) {
       // three idle default robots as physical obstacles / parking practice
       const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';
@@ -487,12 +509,11 @@ export class GameController {
         startIndex,
         passive: true,
       });
-      setups.push(
-        // the partner dummy takes the OTHER preset so it never overlaps the player
-        dummy(1, s.alliance, s.startIndex === 1 ? 0 : 1),
-        dummy(2, opp, 0),
-        dummy(3, opp, 1),
-      );
+      // the partner dummy takes the OTHER preset so it never overlaps the player
+      setups.push(dummy(1, s.alliance, s.startIndex === 1 ? 0 : 1));
+      // opponent dummies fill only the slots no bot is driving
+      if (botCount < 1) setups.push(dummy(2, opp, 0));
+      if (botCount < 2) setups.push(dummy(3, opp, 1));
     }
     this.soloSetups = setups;
     return build(s.mode, seed, setups, this.settings);
@@ -813,6 +834,11 @@ export class GameController {
     let steps = 0;
     const commands = new Map<number, RobotCommand>([[this.localRobotId, local]]);
     while (this.acc >= C.SIM_DT && steps < C.MAX_STEPS_PER_FRAME) {
+      // bots re-think EVERY tick (off the world they are about to be stepped in) and are
+      // localized like the player, so the recorder stores exactly what the sim consumed
+      for (const bot of this.bots) {
+        commands.set(bot.robotId, localizeCommand(bot.command(this.world, this.localRobotId)));
+      }
       this.mod.step(this.world, C.SIM_DT, commands);
       this.recorder?.record(this.world.tick, commands);
       // counted HERE, beside the record call, because it must measure exactly the ticks that

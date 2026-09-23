@@ -1,6 +1,30 @@
-# HANDOFF — 2026-09-17b (main: the record-restart regression, fixed and deployed)
+# HANDOFF — 2026-09-23 (opponent bots)
 
-**READ FIRST.** The alpha merge (below) shipped a regression: **restarting a record run was
+**READ FIRST.**
+
+**State:** `npm run build`, `server:check`, `uiaudit` and the new `npm run test:bots` (13 checks) are green.
+`npm test` was NOT run this session. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
+
+**Done:** computer-driven opponents for solo practice + free drive.
+- `src/bots/opponentBot.ts`: the bot brain. It is a CONTROLLER. It reads the world and emits a `RobotCommand`,
+  so the sim does not know bots exist and replays carry their commands like anyone else's.
+  SCORER (DECODE: collect → launch zone → auto-fire → park in BASE for the endgame) and DEFENDER
+  (sits between the player and their goal, backs off after 3s of contact). Both score in AUTO (G402).
+  Outside DECODE every bot defends.
+- `src/bots/botConfig.ts`: leaf module with the settings vocabulary.
+- Settings: `opponentBots` (0–2), `botStyle` (mixed/scorer/defender), `botLevel` (easy/normal/hard).
+- `GameController.makeWorld` spawns them as ids 2/3 on the opposing alliance. `stepSolo` feeds their
+  localized commands every tick. Opponent practice dummies only fill slots no bot uses.
+- UI: "Opponent bots" section in `MatchSetup.tsx`.
+
+**Next:** smarter scoring (open own gate when the ramp is full, avoid other robots), a bot partner on
+the player's alliance, and real scoring logic for Chain Reaction.
+
+
+## HANDOFF — 2026-09-17b (main: the record-restart regression, fixed and deployed)
+
+
+The alpha merge (below) shipped a regression: **restarting a record run was
 refused** with "You already have a game in progress - rejoin or leave it first". Fixed,
 deployed, `/health` ok, one image across all 8 machines.
 
