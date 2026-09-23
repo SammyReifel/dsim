@@ -12,9 +12,9 @@ export function BiobuzzPracticeTypeSelect({
 }) {
   return (
     <label className="ds-practice-type">
-      <span>{label}</span>
       <select
         className="ds-select"
+        aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value as BbPracticeRobotType)}
       >

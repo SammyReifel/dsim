@@ -1626,6 +1626,65 @@ const slotCount = (w: World, a: 'red' | 'blue') =>
     world.robots.slice(1).map((r) => [r.id, bbOpponentCommand(world, r)]),
   ), { mode: 'free', stopTick: 120, game: 'biobuzz' });
   check('opponent commands reproduce in replay', worldHash(simulateReplay(run.replay)) === worldHash(run.world));
+
+  const partnerOnly = { ...settings, opponentCount: 0 };
+  const claimWorld = createBiobuzzWorld('free', 42, [setups[0], bbTeammateSetup(partnerOnly)!], partnerOnly);
+  const driver = claimWorld.robots[0];
+  const partner = claimWorld.robots[1];
+  const loosePollen = claimWorld.balls.filter((b) => b.state.kind === 'ground' && b.color === 'yellow').slice(0, 2);
+  partner.hopper = [];
+  partner.pos = { x: 40, y: -40 };
+  driver.pos = { x: 40, y: -28 };
+  claimWorld.balls = claimWorld.balls.filter((b) => b.state.kind !== 'ground');
+  claimWorld.balls.push({ ...loosePollen[0], pos: { x: 40, y: -30 } }, { ...loosePollen[1], pos: { x: 50, y: -40 } });
+  const withDriver = bbOpponentCommand(claimWorld, partner);
+  driver.pos = { x: 60, y: 60 };
+  const withoutDriver = bbOpponentCommand(claimWorld, partner);
+  check('BIOBUZZ teammate leaves nearby POLLEN to the human driver when another is available',
+    Math.hypot(withDriver.driveX - withoutDriver.driveX, withDriver.driveY - withoutDriver.driveY) > 0.3);
+
+  // Full matches expose jams that a short drive check misses. Run the real
+  // physics and scoring loop without rendering a canvas or waiting in real time.
+  for (const [label, types, partnerType, difficulty] of [
+    ['mixed', ['sniper', 'hauler'], 'skimmer', 'hard'],
+    ['tank', ['hauler', 'hauler'], 'hauler', 'xhard'],
+    ['turret', ['sniper', 'skimmer'], 'sniper', 'medium'],
+  ] as const) {
+    const practice = { ...settings, opponentTypes: [...types], teammateType: partnerType, opponentDifficulty: difficulty };
+    const match = createBiobuzzWorld('free', 2026, [
+      setups[0], ...bbOpponentSetups(practice), bbTeammateSetup(practice)!,
+    ], practice);
+    const last = new Map(match.robots.slice(1).map((r) => [r.id, { ...r.pos }]));
+    const stopped = new Map<number, number>();
+    const longestStop = new Map<number, number>();
+    const contact = new Map<number, number>();
+    let longestContact = 0;
+    for (let i = 0; i < 12000; i++) {
+      const commands = new Map<number, RobotCommand>();
+      for (const r of match.robots.slice(1)) commands.set(r.id, localizeCommand(bbOpponentCommand(match, r, bbDifficultyFor(practice, r))));
+      biobuzzStep(match, SIM_DT, commands);
+      for (const r of match.robots.slice(1)) {
+        const before = last.get(r.id)!;
+        const still = Math.hypot(r.pos.x - before.x, r.pos.y - before.y) < 0.02;
+        const idle = still ? (stopped.get(r.id) ?? 0) + 1 : 0;
+        stopped.set(r.id, idle);
+        longestStop.set(r.id, Math.max(longestStop.get(r.id) ?? 0, idle));
+        last.set(r.id, { ...r.pos });
+        const touching = match.robots.some((other) => other.id !== r.id &&
+          Math.hypot(r.pos.x - other.pos.x, r.pos.y - other.pos.y) < 20);
+        const episode = touching ? (contact.get(r.id) ?? 0) + 1 : 0;
+        contact.set(r.id, episode);
+        longestContact = Math.max(longestContact, episode);
+      }
+    }
+    check(`BIOBUZZ ${label} bots do not freeze or push each other for long`,
+      [...longestStop.values()].every((ticks) => ticks < 250) && longestContact < 150,
+      `stops=${JSON.stringify([...longestStop])} contact=${longestContact}`);
+    check(`BIOBUZZ ${label} bots each fire during a full practice match`,
+      match.robots.slice(1).every((r) => r.lastFireAt > 0));
+    check(`BIOBUZZ ${label} practice scores for both alliances`,
+      match.match.scores.red.total > 4 && match.match.scores.blue.total > 4);
+  }
 }
 
 // ---- shooting & visible classification -------------------------------------

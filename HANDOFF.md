@@ -1,6 +1,30 @@
+# HANDOFF — 2026-09-23 (BIOBUZZ bot routes and lean practice labels)
+
+**READ FIRST.** Solo Practice bots now keep separate collection halves, leave POLLEN
+near the human driver to the human, use an outside traffic lane to reach their
+alliance's active scoring CELL, and choose occupied shooting lanes dynamically.
+The Hauler waits until it reaches a valid dump spot before holding fire; tank
+steering can reverse for targets behind it. Route selection and wall avoidance
+were adjusted to prevent repeated contact at the HIVE frame and perimeter.
+Practice type dropdowns show only the selected robot type while keeping
+accessible labels. Computer robot names show the preset type without
+"Opponent 1", "Opponent 2", or "Teammate" prefixes.
+
+The smoke suite now runs full 100-second matches headlessly for mixed, all-tank,
+and turret setups, and checks that each bot fires, both alliances score, and
+long stalls and contact stay bounded. `npm test` passed (BIOBUZZ 1308 checks),
+`npm run build`, `npm run uiaudit`, and `git diff --check` passed. Additional
+headless seeds 42/555/2026 scored for both alliances in all three formations.
+No visual simulation was used to validate bot behavior. Local preview remains
+at `http://127.0.0.1:5173/biobuzz/modes`.
+
+Next: have the user try a live Solo Practice match and report any repeatable
+robot position or setup that still stalls. This is the `SammyReifel/dsim` fork,
+not a production deployment.
+
 # HANDOFF — 2026-09-23 (fork: BIOBUZZ Solo Practice AI and setup)
 
-**READ FIRST.** BIOBUZZ Play → Solo Practice now opens a compact setup for 0–2
+**Superseded by section above.** BIOBUZZ Play → Solo Practice now opens a compact setup for 0–2
 opponents, optional computer teammate, robot types (Sniper, Hauler, Skimmer), and
 an Easy/Medium/Hard/Xhard opponent slider. The teammate always runs on Hard.
 Configure → Match keeps the same choices. The selected presets spawn as real
