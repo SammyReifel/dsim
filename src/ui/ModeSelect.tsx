@@ -1,5 +1,7 @@
 import { QueueCounts } from './QueueCounts';
 import { useLanEnabled } from './useLanEnabled';
+import { BotOptions } from './BotOptions';
+import type { GameSettings } from '../types';
 
 /**
  * Game-mode select — reached from PLAY. These are the tiles that used to live on
@@ -19,7 +21,12 @@ export function ModeSelect({
   onRanked,
   onCustomRoom,
   onWatch,
+  settings,
+  onSettings,
 }: {
+  /** the opponent-bot picker sits under the offline tiles and edits these directly */
+  settings: GameSettings;
+  onSettings: (patch: Partial<GameSettings>) => void;
   multiplayer: boolean;
   signedIn: boolean;
   /** a multiplayer game this browser is mid-way through (offer to rejoin it), or null */
@@ -67,6 +74,8 @@ export function ModeSelect({
             </span>
           </button>
         </div>
+        <p className="ds-tileset-label ds-botpick-label">Opponent bots</p>
+        <BotOptions settings={settings} onChange={onSettings} />
       </section>
 
       {/* Online — ranked + score-attack records (need the game server / sign-in) */}

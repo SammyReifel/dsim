@@ -18,6 +18,7 @@ import type { StartSel, StartPose } from './types';
 const startPoseCount = (game: GameId): number => simModuleFor(game).startPoseCount;
 import { cloneBindings, DEFAULT_BINDINGS, mergeBindings } from './input/bindings';
 import { clamp } from './math';
+import { BOT_LEVELS, BOT_STYLES, MAX_OPPONENT_BOTS, type BotLevel, type BotStyle } from './bots/botConfig';
 
 const STORAGE_KEY = 'decodesim.settings.v1';
 
@@ -54,6 +55,9 @@ export function defaultSettings(): GameSettings {
     // GATE (index 0, close) + AUDIENCE (index 1, far) are the default per-category picks
     startMemory: { close: { index: 0, pose: null }, far: { index: 1, pose: null } },
     practiceDummies: false,
+    opponentBots: 0,
+    botStyle: 'mixed',
+    botLevel: 'normal',
     audio: {
       volume: { master: 1, game: 1, shoot: 1, intake: 1, gate: 1, beep: 1, alert: 1, voice: 1 },
       sounds: true,
@@ -285,6 +289,11 @@ export function coerceSettings(raw: unknown): GameSettings {
       out.loadouts = archive;
     }
     if (typeof s.practiceDummies === 'boolean') out.practiceDummies = s.practiceDummies;
+    if (typeof s.opponentBots === 'number' && Number.isFinite(s.opponentBots)) {
+      out.opponentBots = Math.max(0, Math.min(MAX_OPPONENT_BOTS, Math.round(s.opponentBots)));
+    }
+    if ((BOT_STYLES as readonly unknown[]).includes(s.botStyle)) out.botStyle = s.botStyle as BotStyle;
+    if ((BOT_LEVELS as readonly unknown[]).includes(s.botLevel)) out.botLevel = s.botLevel as BotLevel;
     if (typeof s.audio === 'object' && s.audio !== null) {
       const au = s.audio as Record<string, unknown>;
       const vol = au.volume;

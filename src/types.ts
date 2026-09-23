@@ -748,6 +748,12 @@ export interface GameSettings {
    * flat fields above are always the ACTIVE game's copy; `switchGame` swaps them. */
   loadouts?: Partial<Record<GameId, GameLoadout>>;
   practiceDummies: boolean;
+  /** computer-driven OPPONENT robots in solo practice + free drive (0..2, `src/bots/`) */
+  opponentBots: number;
+  /** what the opponent bots do: collect + shoot, shadow the player, or one of each */
+  botStyle: import('./bots/botConfig').BotStyle;
+  /** how fast the bots drive (and, for scorers, how much they carry before shooting) */
+  botLevel: import('./bots/botConfig').BotLevel;
   /** the ACTIVE resolved driver assists (what spawns + goes on the wire).
    * MIRRORED from `spec.assists`, which is where the preference is actually STORED — the
    * robot owns its assists, so loading a saved robot / preset / the other game's loadout

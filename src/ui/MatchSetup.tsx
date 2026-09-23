@@ -15,6 +15,7 @@ import { useAds } from '../ads/AdsProvider';
 import { selectStart, switchCategory, saveStart, deleteSavedStart } from './startPositions';
 import { ChainStartEditor } from './ChainStartEditor';
 import { moduleFor } from '../games';
+import { BotOptions } from './BotOptions';
 
 /**
  * Match configuration — the pre-game options that belong to the MATCH, not the
@@ -247,6 +248,11 @@ export function MatchSetup({
             <span className="ot">Practice dummies {settings.practiceDummies ? 'ON' : 'OFF'}</span>
           </button>
         </div>
+      </section>
+
+      <section className="ds-sec">
+        <h2>Opponent bots</h2>
+        <BotOptions settings={settings} onChange={set} />
       </section>
 
       {runsAutoPaths && (
