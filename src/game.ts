@@ -33,7 +33,7 @@ import { MatchAudio } from './audio';
 import type { MatchResultInfo, NetSession, NetStatus, Snapshot } from './net/session';
 import { localizeCommand } from './net/protocol';
 import { makeBots, MAX_OPPONENT_BOTS, type OpponentBot } from './bots/opponentBot';
-import { BB_DEFAULT_SPEC } from './games/biobuzz/coerce';
+import { botSetup } from './bots/botSetup';
 import { clamp } from './math';
 import type { RecordRankInfo } from './net/protocol';
 
@@ -477,8 +477,7 @@ export class GameController {
         autoPathEnabled: s.autoPathEnabled,
       },
     ];
-    // OPPONENT BOTS take the opposing slots (ids 2, 3). They are ordinary robots with every
-    // assist on — auto intake and auto fire do the mechanism work, the brain only drives.
+    // OPPONENT BOTS take the opposing slots (ids 2, 3) — ordinary robots driven by `src/bots/`
     const botCount = this.session ? 0 : Math.max(0, Math.min(MAX_OPPONENT_BOTS, s.opponentBots ?? 0));
     const botIds: number[] = [];
     if (botCount > 0) {
@@ -486,22 +485,10 @@ export class GameController {
       for (let i = 0; i < botCount; i++) {
         const id = 2 + i;
         botIds.push(id);
-        setups.push({
-          id,
-          alliance: opp,
-          // BIOBUZZ bots drive its default build (a turret, which aims itself), not DECODE's
-          spec: {
-            ...(this.gameId === 'biobuzz' ? BB_DEFAULT_SPEC : DEFAULT_SPEC),
-            name: `Bot ${i + 1}`,
-            teamName: 'Opponent bot',
-            teamNumber: 0,
-          },
-          assists: { ...DEFAULT_ASSISTS, fieldCentric: true, autoIntake: true, autoFire: true },
-          startIndex: i,
-        });
+        setups.push(botSetup(this.gameId, id, opp, i));
       }
     }
-    this.bots = makeBots(botIds, s.botStyle ?? 'mixed', s.botLevel ?? 'normal');
+    this.bots = makeBots(botIds, s.botLevel ?? 'normal');
     if (s.mode === 'free' && s.practiceDummies) {
       // three idle default robots as physical obstacles / parking practice
       const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';

@@ -1,12 +1,7 @@
 import type { GameSettings } from '../types';
-import type { BotLevel, BotStyle } from '../bots/botConfig';
+import type { BotLevel } from '../bots/botConfig';
 
 const COUNTS = [0, 1, 2] as const;
-const STYLES: [BotStyle, string][] = [
-  ['mixed', 'Mixed'],
-  ['scorer', 'Scorers'],
-  ['defender', 'Defenders'],
-];
 const LEVELS: [BotLevel, string][] = [
   ['easy', 'Easy'],
   ['normal', 'Normal'],
@@ -14,9 +9,13 @@ const LEVELS: [BotLevel, string][] = [
 ];
 
 /**
- * The OPPONENT BOTS picker (`src/bots/`): how many, what they do, how hard. One component so
- * the mode select and Configure → Match setup can never disagree about the options. Bots play
- * in the two OFFLINE modes only — an online room has real opponents.
+ * The OPPONENT BOTS picker (`src/bots/`): how many, and how hard. One component so the mode
+ * select and Configure → Match setup can never disagree about the options. Bots play in the
+ * two OFFLINE modes only — an online room has real opponents.
+ *
+ * There is no play-style choice: the level decides it. Easy and Normal just play the game;
+ * Hard coordinates, and is the only level that plays defence — which is why Hard, alone, gets
+ * a line saying so. The other two do what their names say.
  */
 export function BotOptions({
   settings,
@@ -42,17 +41,6 @@ export function BotOptions({
       {count > 0 && (
         <>
           <div className="ds-opts three">
-            {STYLES.map(([k, label]) => (
-              <button
-                key={k}
-                className={`ds-opt mini ${settings.botStyle === k ? 'on' : ''}`}
-                onClick={() => onChange({ botStyle: k })}
-              >
-                <span className="ot">{label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="ds-opts three">
             {LEVELS.map(([k, label]) => (
               <button
                 key={k}
@@ -63,7 +51,9 @@ export function BotOptions({
               </button>
             ))}
           </div>
-          {settings.game === 'chain' && <p className="ds-hint">In Chain Reaction, bots only defend.</p>}
+          {settings.botLevel === 'hard' && (
+            <p className="ds-hint">Hard bots work as a team and play defence when you’re carrying.</p>
+          )}
         </>
       )}
     </div>

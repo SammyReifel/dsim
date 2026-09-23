@@ -1,6 +1,39 @@
-# HANDOFF — 2026-09-23 (opponent bots)
+# HANDOFF — 2026-09-23b (opponent bots, round 2)
 
-**READ FIRST.**
+**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (33 checks, all three
+games) are green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
+
+**Done** (`src/bots/`):
+- **The level decides how bots play. There is no style setting any more** (`botStyle` removed).
+  Easy and Normal just play the game. HARD coordinates through `BotTeam`: while the player
+  carries something, the nearer bot of a pair defends and the other scores. A lone Hard bot
+  defends only near the player's goal. Role swaps hold for 2.5 s. At every level, teammates never
+  chase the same target.
+- **BIOBUZZ bots drive Skimmer + a back Box Tube** (`botSetup.ts`). The Sniper's single turret
+  cannot even CARRY nectar (`bbIntakeAccepts`), so it could never play flowers. Bots:
+  - pull POLLEN from the bottom of flowers they don't own;
+  - collect their own NECTAR, and call the human player whenever entitled;
+  - shoot as soon as the hopper would TIP the hive (`bbWouldTip`);
+  - after the 1:00 cue, place NECTAR (then POLLEN) into the most valuable flower (`bestFlower`).
+- **Chain Reaction bots score now** (auto-fire turret, particle sweeping) and ASCEND a ring stand.
+  `parkSpot` must sit within `CHAIN_ASCEND_R` of the corner BLOCK, not the post.
+- **DECODE:** bots drain their own full ramp at the gate (not in the last 35 s: pattern). They
+  keep out of the OPPONENT'S gate (G417/G418 were costing hundreds of points) and, in the
+  endgame, the opponent's base (G427). They skip the opponent's loading zone. A defender waits
+  OUTSIDE the victim's protected zones.
+- **Polish:**
+  - slew-limited sticks ("hands");
+  - EASY re-plans every 12 ticks;
+  - wall-hugging elements get a square-up approach;
+  - endgame departure is timed from distance, not a fixed second.
+
+**Tried and reverted:** steering round loose artifacts with a full hopper (to avoid G408 herding)
+halved DECODE scoring and introduced majors.
+
+**Next:** bot teammate on the player's alliance; BIOBUZZ G407 warnings (a bot with 4 held still
+bulldozes piles; warnings only, no points).
+
+## HANDOFF — 2026-09-23 (opponent bots)
 
 **State:** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (22 checks, DECODE + BIOBUZZ)
 are green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
