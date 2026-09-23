@@ -1,6 +1,27 @@
+# HANDOFF — 2026-09-23 (fork: BIOBUZZ Solo Practice AI and setup)
+
+**READ FIRST.** BIOBUZZ Play → Solo Practice now opens a compact setup for 0–2
+opponents, optional computer teammate, robot types (Sniper, Hauler, Skimmer), and
+an Easy/Medium/Hard/Xhard opponent slider. The teammate always runs on Hard.
+Configure → Match keeps the same choices. The selected presets spawn as real
+robot builds and saved settings are validated on load.
+
+Computer robots now route around the HIVE base bars, recover when pinned, avoid
+nearby robots, assign loose POLLEN between same-alliance bots, and use separate
+shooting lanes. Blue and red shoot from their HIVE's scoring side. The four-robot
+headless probe showed both alliances tipping a HIVE; longest idle periods were
+under one second after the final lane adjustment. Solo replay records the AI
+commands. `npm test` passed both suites (BIOBUZZ: 1308 checks); `npm run build`,
+`npm run uiaudit`, and `git diff --check` passed. The Solo Practice panel and
+slider were verified in the local browser at `http://127.0.0.1:5173/biobuzz/modes`.
+
+Next: let the user play the local preview and report any specific field location
+where a robot still catches. This branch is for the `SammyReifel/dsim` fork and
+has not been deployed to playdsim.com.
+
 # HANDOFF — 2026-09-23 (fork: BIOBUZZ offline computer opponents)
 
-**READ FIRST.** Added a 0/1/2 opponent selector to the BIOBUZZ Configure → Match page
+**Superseded by section above.** Added a 0/1/2 opponent selector to the BIOBUZZ Configure → Match page
 for Solo Practice and Free Drive. Opponents spawn on the other alliance at separate
 anchors, collect POLLEN, and shoot at their own HIVE. Their per-tick commands are
 recorded in solo replays. DECODE and Chain Reaction have no new opponent control.

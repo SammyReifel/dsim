@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import type { GameSettings } from '../types';
+import type { GameId } from '../games/types';
+import { BiobuzzPracticeTypeSelect } from './BiobuzzPracticeTypeSelect';
+import { BiobuzzDifficultySlider } from './BiobuzzDifficultySlider';
 import { QueueCounts } from './QueueCounts';
 import { useLanEnabled } from './useLanEnabled';
 
@@ -10,6 +15,13 @@ export function ModeSelect({
   multiplayer,
   signedIn,
   onLan,
+  game,
+  opponentCount,
+  opponentTypes,
+  opponentDifficulty,
+  practiceTeammate,
+  teammateType,
+  onPracticeChange,
   activeGame,
   onRejoin,
   onFreeDrive,
@@ -22,6 +34,13 @@ export function ModeSelect({
 }: {
   multiplayer: boolean;
   signedIn: boolean;
+  game: GameId;
+  opponentCount: number;
+  opponentTypes: GameSettings['opponentTypes'];
+  opponentDifficulty: GameSettings['opponentDifficulty'];
+  practiceTeammate: boolean;
+  teammateType: GameSettings['teammateType'];
+  onPracticeChange: (patch: Partial<Pick<GameSettings, 'opponentCount' | 'opponentTypes' | 'opponentDifficulty' | 'practiceTeammate' | 'teammateType'>>) => void;
   /** a multiplayer game this browser is mid-way through (offer to rejoin it), or null */
   activeGame: { kind: 'ranked' | 'custom' | 'record' } | null;
   onRejoin: () => void;
@@ -36,6 +55,7 @@ export function ModeSelect({
   onLan: () => void;
 }) {
   const lanOn = useLanEnabled();
+  const [practiceOpen, setPracticeOpen] = useState(false);
   return (
     <>
       <h1 className="ds-h1">Pick a mode</h1>
@@ -53,7 +73,12 @@ export function ModeSelect({
       <section className="ds-tileset">
         <p className="ds-tileset-label">Practice · offline</p>
         <div className="ds-tiles">
-          <button className="ds-tile primary" onClick={onSoloMatch}>
+          <button
+            className="ds-tile primary"
+            onClick={game === 'biobuzz' ? () => setPracticeOpen((open) => !open) : onSoloMatch}
+            aria-expanded={game === 'biobuzz' ? practiceOpen : undefined}
+            aria-controls={game === 'biobuzz' && practiceOpen ? 'biobuzz-solo-setup' : undefined}
+          >
             <span className="k">Solo</span>
             <span>
               <span className="t">Solo Practice</span>
@@ -67,6 +92,80 @@ export function ModeSelect({
             </span>
           </button>
         </div>
+        {game === 'biobuzz' && practiceOpen && (
+          <div className="ds-practice-panel" id="biobuzz-solo-setup" role="region" aria-label="Solo Practice setup">
+            <div className="ds-practice-head"><h2>Solo Practice</h2></div>
+            <fieldset className="ds-practice-group">
+              <legend>Opponents</legend>
+              <div className="ds-opts three">
+                {([0, 1, 2] as const).map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    className={`ds-opt mini ${opponentCount === count ? 'on' : ''}`}
+                    onClick={() => onPracticeChange({ opponentCount: count })}
+                    aria-pressed={opponentCount === count}
+                  >
+                    <span className="ot">{count}</span>
+                  </button>
+                ))}
+              </div>
+              {opponentCount > 0 && (
+                <>
+                  <BiobuzzDifficultySlider value={opponentDifficulty} onChange={(value) => onPracticeChange({ opponentDifficulty: value })} />
+                  <div className="ds-practice-type-list">
+                    {Array.from({ length: opponentCount }, (_, index) => (
+                      <BiobuzzPracticeTypeSelect
+                        key={index}
+                        label={`Opponent ${index + 1}`}
+                        value={opponentTypes[index]}
+                        onChange={(type) => onPracticeChange({
+                          opponentTypes: index === 0
+                            ? [type, opponentTypes[1]]
+                            : [opponentTypes[0], type],
+                        })}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </fieldset>
+            <fieldset className="ds-practice-group">
+              <legend>Teammate</legend>
+              <div className="ds-opts two">
+                <button
+                  type="button"
+                  className={`ds-opt mini ${!practiceTeammate ? 'on' : ''}`}
+                  onClick={() => onPracticeChange({ practiceTeammate: false })}
+                  aria-pressed={!practiceTeammate}
+                >
+                  <span className="ot">No</span>
+                </button>
+                <button
+                  type="button"
+                  className={`ds-opt mini ${practiceTeammate ? 'on' : ''}`}
+                  onClick={() => onPracticeChange({ practiceTeammate: true })}
+                  aria-pressed={practiceTeammate}
+                >
+                  <span className="ot">Yes</span>
+                </button>
+              </div>
+              {practiceTeammate && (
+                <div className="ds-practice-type-list">
+                  <BiobuzzPracticeTypeSelect
+                    label="Robot type"
+                    value={teammateType}
+                    onChange={(type) => onPracticeChange({ teammateType: type })}
+                  />
+                </div>
+              )}
+            </fieldset>
+            <div className="ds-practice-actions">
+              <span>{practiceTeammate ? '2' : '1'}v{opponentCount}</span>
+              <button className="ds-btn primary" onClick={onSoloMatch}>Start</button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Online — ranked + score-attack records (need the game server / sign-in) */}

@@ -11,6 +11,7 @@ import {
 import { MAX_SAVED_ROBOTS, MAX_SAVED_AUTOS, MAX_SAVED_STARTS_SUPPORTER } from './config';
 import { GAME_IDS, isGameId } from './games/types';
 import { simModuleFor } from './games/sim';
+import { bbPracticeType } from './games/biobuzz/practiceTypes';
 import type { StartSel, StartPose } from './types';
 
 /** how many named start anchors a game has (for clamping startIndex per game) —
@@ -55,6 +56,10 @@ export function defaultSettings(): GameSettings {
     startMemory: { close: { index: 0, pose: null }, far: { index: 1, pose: null } },
     practiceDummies: false,
     opponentCount: 0,
+    opponentTypes: ['sniper', 'skimmer'],
+    opponentDifficulty: 'medium',
+    practiceTeammate: false,
+    teammateType: 'sniper',
     audio: {
       volume: { master: 1, game: 1, shoot: 1, intake: 1, gate: 1, beep: 1, alert: 1, voice: 1 },
       sounds: true,
@@ -289,6 +294,18 @@ export function coerceSettings(raw: unknown): GameSettings {
     if (typeof s.opponentCount === 'number' && Number.isFinite(s.opponentCount)) {
       out.opponentCount = clamp(Math.round(s.opponentCount), 0, 2);
     }
+    if (Array.isArray(s.opponentTypes)) {
+      out.opponentTypes = [
+        bbPracticeType(s.opponentTypes[0], 'sniper'),
+        bbPracticeType(s.opponentTypes[1], 'skimmer'),
+      ];
+    }
+    if (s.opponentDifficulty === 'easy' || s.opponentDifficulty === 'medium' ||
+        s.opponentDifficulty === 'hard' || s.opponentDifficulty === 'xhard') {
+      out.opponentDifficulty = s.opponentDifficulty;
+    }
+    if (typeof s.practiceTeammate === 'boolean') out.practiceTeammate = s.practiceTeammate;
+    out.teammateType = bbPracticeType(s.teammateType, 'sniper');
     if (typeof s.audio === 'object' && s.audio !== null) {
       const au = s.audio as Record<string, unknown>;
       const vol = au.volume;

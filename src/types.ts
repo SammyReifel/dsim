@@ -12,6 +12,8 @@ export type ArtifactColor = 'purple' | 'green' | 'yellow' | 'red' | 'blue';
 export type Motif = readonly [ArtifactColor, ArtifactColor, ArtifactColor];
 
 export type GameMode = 'match' | 'free';
+export type BbPracticeRobotType = 'sniper' | 'hauler' | 'skimmer';
+export type BbOpponentDifficulty = 'easy' | 'medium' | 'hard' | 'xhard';
 
 export interface Vec2 {
   x: number;
@@ -750,6 +752,14 @@ export interface GameSettings {
   practiceDummies: boolean;
   /** BIOBUZZ computer opponents in offline Free Drive and Solo Practice. */
   opponentCount: number;
+  /** The preset build used by each BIOBUZZ computer opponent. */
+  opponentTypes: [BbPracticeRobotType, BbPracticeRobotType];
+  /** BIOBUZZ opponent skill; computer teammates always use Hard. */
+  opponentDifficulty: BbOpponentDifficulty;
+  /** BIOBUZZ computer teammate in offline Free Drive and Solo Practice. */
+  practiceTeammate: boolean;
+  /** The preset build used by the BIOBUZZ computer teammate. */
+  teammateType: BbPracticeRobotType;
   /** the ACTIVE resolved driver assists (what spawns + goes on the wire).
    * MIRRORED from `spec.assists`, which is where the preference is actually STORED — the
    * robot owns its assists, so loading a saved robot / preset / the other game's loadout

@@ -177,7 +177,7 @@ import {
 import { beamBlock, beamDrag, beamDragFactor, beamStrafeBlock, beamForwardness, beamRide, canCrossBeams, cogFactor, wheelsOnBeam, CHAIN_BEAMS } from '../src/games/chain/beams';
 import { butterflyTankRpmLimits, driveParams, massLimits, rpmLimits, motorStep, driveSummary, widthLimits, pushForce, shoveMass } from '../src/sim/drivetrain';
 import { coerceSettings, defaultSettings, switchGame, syncAudioMirrors } from '../src/settings';
-import { bbOpponentCommand, bbOpponentSetups } from '../src/games/biobuzz/opponents';
+import { bbDifficultyFor, bbOpponentCommand, bbOpponentSetups, bbTeammateSetup } from '../src/games/biobuzz/opponents';
 import { createBiobuzzWorld } from '../src/games/biobuzz/spawn';
 import { biobuzzStep } from '../src/games/biobuzz/step';
 import type { RobotSetup } from '../src/sim/spawn';
@@ -1546,34 +1546,82 @@ const slotCount = (w: World, a: 'red' | 'blue') =>
 
 // ---- BIOBUZZ offline computer opponents ------------------------------------
 {
-  const settings = { ...switchGame(defaultSettings(), 'biobuzz'), mode: 'free' as const, opponentCount: 2 };
+  const settings = { ...switchGame(defaultSettings(), 'biobuzz'), mode: 'free' as const, opponentCount: 2, practiceTeammate: true };
   const opponents = bbOpponentSetups(settings);
+  const teammate = bbTeammateSetup(settings)!;
   const setups: RobotSetup[] = [
     { id: 0, alliance: 'blue', spec: settings.spec, assists: settings.assists, startIndex: 0 },
     ...opponents,
+    teammate,
   ];
   check('opponent count is persisted and clamped',
     coerceSettings({ opponentCount: 2 }).opponentCount === 2 &&
     coerceSettings({ opponentCount: 99 }).opponentCount === 2 &&
     coerceSettings({ opponentCount: -1 }).opponentCount === 0);
+  check('teammate choice is persisted and defaults off',
+    coerceSettings({ practiceTeammate: true }).practiceTeammate &&
+    !coerceSettings({}).practiceTeammate);
+  check('opponent difficulty is persisted and invalid values reset',
+    coerceSettings({ opponentDifficulty: 'xhard' }).opponentDifficulty === 'xhard' &&
+    coerceSettings({ opponentDifficulty: 'invalid' }).opponentDifficulty === 'medium');
+  check('opponent robot types are persisted and validated',
+    coerceSettings({ opponentTypes: ['hauler', 'skimmer'], teammateType: 'hauler' }).opponentTypes[0] === 'hauler' &&
+    coerceSettings({ opponentTypes: ['invalid', 'skimmer'] }).opponentTypes[0] === 'sniper');
   check('BIOBUZZ opponents spawn on the other alliance at distinct anchors',
     opponents.length === 2 && opponents[0].alliance === 'red' && opponents[1].alliance === 'red' &&
     opponents[0].startIndex !== opponents[1].startIndex && !opponents[0].passive && !opponents[1].passive);
   check('other seasons have no computer opponents', bbOpponentSetups(defaultSettings()).length === 0);
+  check('BIOBUZZ teammate uses the player alliance and the other start role',
+    teammate.id === 3 && teammate.alliance === 'blue' && teammate.startIndex === 1 &&
+    bbTeammateSetup({ ...settings, startIndex: 1 })?.startIndex === 0 &&
+    bbTeammateSetup({ ...settings, opponentCount: 0 })?.id === 1 &&
+    bbTeammateSetup({ ...settings, practiceTeammate: false }) === null &&
+    bbTeammateSetup(defaultSettings()) === null);
   const w = createBiobuzzWorld('free', 42, setups, settings);
+  check('practice match spawns two robots per alliance without overlap',
+    w.robots.length === 4 && w.robots[0].alliance === w.robots[3].alliance &&
+    Math.hypot(w.robots[0].pos.x - w.robots[3].pos.x, w.robots[0].pos.y - w.robots[3].pos.y) > 50);
+  check('opponents use the selected robot builds',
+    w.robots[1].spec.name.includes('Sniper') && w.robots[2].spec.name.includes('Skimmer'));
+  check('opponent difficulty leaves the teammate at Hard',
+    bbDifficultyFor({ ...settings, opponentDifficulty: 'easy' }, w.robots[1]) === 'easy' &&
+    bbDifficultyFor({ ...settings, opponentDifficulty: 'easy' }, w.robots[3]) === 'hard');
   const first = w.robots[1];
   const start = { ...first.pos };
   const command = localizeCommand(bbOpponentCommand(w, first));
-  check('opponent command runs intake/fire', command.intake && command.fire);
-  for (let i = 0; i < 900; i++) {
+  check('opponent command drives toward a task with intake enabled',
+    command.intake && Math.hypot(command.driveX, command.driveY) > 0.1);
+  const easy = bbOpponentCommand(w, first, 'easy');
+  const xhard = bbOpponentCommand(w, first, 'xhard');
+  check('difficulty changes driving pace',
+    Math.hypot(xhard.driveX, xhard.driveY) > Math.hypot(easy.driveX, easy.driveY));
+  const idleTicks = new Map<number, number>();
+  const longestIdle = new Map<number, number>();
+  const lastPos = new Map(w.robots.slice(1).map((r) => [r.id, { ...r.pos }]));
+  for (let i = 0; i < 1500; i++) {
     const commands = new Map<number, RobotCommand>();
-    for (const r of w.robots.slice(1)) commands.set(r.id, localizeCommand(bbOpponentCommand(w, r)));
+    for (const r of w.robots.slice(1)) commands.set(r.id, localizeCommand(bbOpponentCommand(w, r, bbDifficultyFor(settings, r))));
     biobuzzStep(w, SIM_DT, commands);
+    for (const r of w.robots.slice(1)) {
+      const before = lastPos.get(r.id)!;
+      const stopped = Math.hypot(r.pos.x - before.x, r.pos.y - before.y) < 0.025 && Math.abs(r.angVel) < 0.2;
+      const ticks = stopped ? (idleTicks.get(r.id) ?? 0) + 1 : 0;
+      idleTicks.set(r.id, ticks);
+      longestIdle.set(r.id, Math.max(longestIdle.get(r.id) ?? 0, ticks));
+      lastPos.set(r.id, { ...r.pos });
+    }
   }
+  check('computer robots keep moving instead of freezing at obstacles',
+    [...longestIdle.values()].every((ticks) => ticks < 160),
+    JSON.stringify([...longestIdle]));
   check('opponent robot moves in offline play',
     Math.hypot(first.pos.x - start.x, first.pos.y - start.y) > 5);
+  check('opponent robots fire in offline play', first.lastFireAt > 0);
   check('BIOBUZZ opponents can score into their HIVE',
     (w.biobuzz?.hives.red.tips ?? 0) > 0 && w.match.scores.red.total > 0);
+  check('BIOBUZZ teammate can score into your HIVE',
+    (w.biobuzz?.hives.blue.tips ?? 0) > 0 && w.match.scores.blue.total > 0,
+    `blue tips=${w.biobuzz?.hives.blue.tips} score=${w.match.scores.blue.total} teammate pos=${JSON.stringify(w.robots[3].pos)} hopper=${w.robots[3].hopper.length}`);
   const run = runRecordMatch(42, setups, (_tick, world) => new Map(
     world.robots.slice(1).map((r) => [r.id, bbOpponentCommand(world, r)]),
   ), { mode: 'free', stopTick: 120, game: 'biobuzz' });

@@ -15,6 +15,8 @@ import { useAds } from '../ads/AdsProvider';
 import { selectStart, switchCategory, saveStart, deleteSavedStart } from './startPositions';
 import { ChainStartEditor } from './ChainStartEditor';
 import { moduleFor } from '../games';
+import { BiobuzzPracticeTypeSelect } from './BiobuzzPracticeTypeSelect';
+import { BiobuzzDifficultySlider } from './BiobuzzDifficultySlider';
 
 /**
  * Match configuration — the pre-game options that belong to the MATCH, not the
@@ -242,7 +244,7 @@ export function MatchSetup({
         <div className="ds-opts fill">
           <button
             className={`ds-opt mini ${settings.practiceDummies ? 'on' : ''}`}
-            onClick={() => set({ practiceDummies: !settings.practiceDummies, opponentCount: 0 })}
+            onClick={() => set({ practiceDummies: !settings.practiceDummies, opponentCount: 0, practiceTeammate: false })}
           >
             <span className="ot">Practice dummies {settings.practiceDummies ? 'ON' : 'OFF'}</span>
           </button>
@@ -252,19 +254,63 @@ export function MatchSetup({
       {settings.game === 'biobuzz' && (
         <section className="ds-sec">
           <h2>Opponent robots</h2>
-            <p className="ds-hint">Add computer opponents to BIOBUZZ Solo Practice or Free Drive.</p>
-            <div className="ds-opts three">
-              {([0, 1, 2] as const).map((count) => (
-                <button
-                  key={count}
-                  className={`ds-opt mini ${settings.opponentCount === count ? 'on' : ''}`}
-                  onClick={() => set({ opponentCount: count, practiceDummies: false })}
-                  aria-pressed={settings.opponentCount === count}
-                >
-                  <span className="ot">{count === 0 ? 'No opponents' : `${count} opponent${count === 1 ? '' : 's'}`}</span>
-                </button>
+          <div className="ds-opts three">
+            {([0, 1, 2] as const).map((count) => (
+              <button
+                key={count}
+                className={`ds-opt mini ${settings.opponentCount === count ? 'on' : ''}`}
+                onClick={() => set({ opponentCount: count, practiceDummies: false })}
+                aria-pressed={settings.opponentCount === count}
+              >
+                <span className="ot">{count}</span>
+              </button>
+            ))}
+          </div>
+          {settings.opponentCount > 0 && (
+            <BiobuzzDifficultySlider value={settings.opponentDifficulty} onChange={(opponentDifficulty) => set({ opponentDifficulty })} />
+          )}
+          {settings.opponentCount > 0 && (
+            <div className="ds-practice-type-list">
+              {Array.from({ length: settings.opponentCount }, (_, index) => (
+                <BiobuzzPracticeTypeSelect
+                  key={index}
+                  label={`Opponent ${index + 1}`}
+                  value={settings.opponentTypes[index]}
+                  onChange={(type) => set({
+                    opponentTypes: index === 0
+                      ? [type, settings.opponentTypes[1]]
+                      : [settings.opponentTypes[0], type],
+                  })}
+                />
               ))}
             </div>
+          )}
+          <h2>Teammate</h2>
+          <div className="ds-opts two">
+            <button
+              className={`ds-opt mini ${!settings.practiceTeammate ? 'on' : ''}`}
+              onClick={() => set({ practiceTeammate: false })}
+              aria-pressed={!settings.practiceTeammate}
+            >
+              <span className="ot">No</span>
+            </button>
+            <button
+              className={`ds-opt mini ${settings.practiceTeammate ? 'on' : ''}`}
+              onClick={() => set({ practiceTeammate: true, practiceDummies: false })}
+              aria-pressed={settings.practiceTeammate}
+            >
+              <span className="ot">Yes</span>
+            </button>
+          </div>
+          {settings.practiceTeammate && (
+            <div className="ds-practice-type-list">
+              <BiobuzzPracticeTypeSelect
+                label="Robot type"
+                value={settings.teammateType}
+                onChange={(type) => set({ teammateType: type })}
+              />
+            </div>
+          )}
         </section>
       )}
 

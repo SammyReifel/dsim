@@ -1721,6 +1721,102 @@ button.ds-chip {
   color: var(--ds-mut);
   margin: 0 0 10px 2px;
 }
+/* BIOBUZZ's offline match choices sit beside the mode they configure. */
+.ds-practice-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin-top: 16px;
+  padding: 24px;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-round-md);
+  background: var(--ds-panel);
+  box-shadow: var(--ds-block);
+}
+.ds-practice-head,
+.ds-practice-actions {
+  grid-column: 1 / -1;
+}
+.ds-practice-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.ds-practice-head p {
+  margin: 4px 0 0;
+  color: var(--ds-mut);
+  font-size: 13px;
+}
+.ds-practice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ds-practice-group legend {
+  margin-bottom: 8px;
+  color: var(--ds-mut);
+  font-family: var(--ds-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ds-practice-group .ds-opts {
+  gap: 8px;
+}
+.ds-practice-type-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.ds-practice-type {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ds-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ds-practice-type .ds-select {
+  width: 100%;
+}
+.ds-practice-difficulty {
+  margin-top: 16px;
+}
+.ds-practice-difficulty label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.ds-practice-difficulty input {
+  width: 100%;
+  accent-color: var(--ds-accent);
+}
+.ds-practice-difficulty-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--ds-mut);
+  font-size: 11px;
+}
+.ds-practice-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ds-line);
+}
+.ds-practice-actions > span {
+  color: var(--ds-mut);
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .ds-practice-panel { grid-template-columns: 1fr; }
+  .ds-practice-actions { align-items: stretch; flex-direction: column; }
+}
 /* A section label that follows a card sits ON the card without this: `.ds-main` is a plain
    block with no gap, the label has no top margin, and `--ds-block` is an offset shadow that
    paints 4px below the border — so the label's cap height landed inside the shadow (LAN

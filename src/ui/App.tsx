@@ -1548,6 +1548,13 @@ export function App() {
         <ModeSelect
           multiplayer={multiplayer}
           signedIn={signedIn}
+          game={settings.game}
+          opponentCount={settings.opponentCount}
+          opponentTypes={settings.opponentTypes}
+          opponentDifficulty={settings.opponentDifficulty}
+          practiceTeammate={settings.practiceTeammate}
+          teammateType={settings.teammateType}
+          onPracticeChange={(patch) => update({ ...settings, ...patch, practiceDummies: false })}
           activeGame={activeGame ? { kind: activeGame.kind } : null}
           onRejoin={() => {
             const ref = loadActiveGame();
