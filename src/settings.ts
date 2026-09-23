@@ -56,6 +56,7 @@ export function defaultSettings(): GameSettings {
     startMemory: { close: { index: 0, pose: null }, far: { index: 1, pose: null } },
     practiceDummies: false,
     opponentBots: 0,
+    botPartner: false,
     botLevel: 'normal',
     audio: {
       volume: { master: 1, game: 1, shoot: 1, intake: 1, gate: 1, beep: 1, alert: 1, voice: 1 },
@@ -292,6 +293,7 @@ export function coerceSettings(raw: unknown): GameSettings {
       out.opponentBots = Math.max(0, Math.min(MAX_OPPONENT_BOTS, Math.round(s.opponentBots)));
     }
     if ((BOT_LEVELS as readonly unknown[]).includes(s.botLevel)) out.botLevel = s.botLevel as BotLevel;
+    if (typeof s.botPartner === 'boolean') out.botPartner = s.botPartner;
     if (typeof s.audio === 'object' && s.audio !== null) {
       const au = s.audio as Record<string, unknown>;
       const vol = au.volume;

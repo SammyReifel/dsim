@@ -73,12 +73,17 @@ interface Tune {
   fullGame: boolean;
   /** team play: role split + defence (`BotTeam`) */
   coordinate: boolean;
+  /** the lead over the player's alliance the team must hold before it spends a robot on
+   * defence. HARD defends whatever the score; NIGHTMARE only once it is winning, so a bot is
+   * never parked in front of you while its alliance falls behind. */
+  defendLead: number;
 }
 
 const TUNE: Record<BotLevel, Tune> = {
-  easy: { speed: 0.55, load: 1, slew: 0.06, replan: 12, fullGame: false, coordinate: false },
-  normal: { speed: 0.8, load: 2, slew: 0.12, replan: 3, fullGame: true, coordinate: false },
-  hard: { speed: 1, load: 3, slew: 0.25, replan: 1, fullGame: true, coordinate: true },
+  easy: { speed: 0.55, load: 1, slew: 0.06, replan: 12, fullGame: false, coordinate: false, defendLead: Infinity },
+  normal: { speed: 0.8, load: 2, slew: 0.12, replan: 3, fullGame: true, coordinate: false, defendLead: Infinity },
+  hard: { speed: 1, load: 3, slew: 0.25, replan: 1, fullGame: true, coordinate: true, defendLead: -Infinity },
+  nightmare: { speed: 1, load: 3, slew: 0.4, replan: 1, fullGame: true, coordinate: true, defendLead: 15 },
 };
 
 /** seconds without closing on a target before the bot gives up on it */
@@ -148,10 +153,12 @@ const zeroCmd = (): RobotCommand => ({
  * What bots on one alliance agree on: who is chasing which element (so two never go for the
  * same one) and, on HARD, which of them — if any — is defending right now.
  *
- * HARD DEFENCE IS A RESPONSE, NOT A POSTURE. A bot drops back only while the player is
- * CARRYING something (`threat`): the nearer bot of a pair takes it and the other keeps
- * scoring; a lone bot defends only when the player is also closing on their goal, because a
- * lone defender scores nothing. Swaps hold `ROLE_HOLD_S` so the two do not flap.
+ * DEFENCE IS A RESPONSE, NOT A POSTURE. A bot drops back only while the player is CARRYING
+ * something (`threat`): the nearer bot of a pair takes it and the other keeps scoring; a lone
+ * bot defends only when the player is also closing on their goal, because a lone defender
+ * scores nothing. NIGHTMARE adds the scoreboard (`defendLead`): behind or level, every bot
+ * scores, and only a lead buys a defender — so it is always playing to win, never just to
+ * annoy. Swaps hold `ROLE_HOLD_S` so the two do not flap.
  */
 export class BotTeam {
   readonly bots: OpponentBot[] = [];
@@ -162,12 +169,15 @@ export class BotTeam {
   update(world: World, playerId: number): void {
     if (world.tick === this.tick) return;
     this.tick = world.tick;
-    const lead = this.bots[0];
+    const first = this.bots[0];
     let want: number | null = null;
-    if (lead && TUNE[lead.level].coordinate && world.match.phase !== 'auto') {
-      const me = world.robots.find((r) => r.id === lead.robotId);
+    if (first && TUNE[first.level].coordinate && world.match.phase !== 'auto') {
+      const me = world.robots.find((r) => r.id === first.robotId);
       const player = world.robots.find((r) => r.id === playerId && me && r.alliance !== me.alliance);
-      if (player && threat(world, player)) {
+      const lead = me && player
+        ? world.match.scores[me.alliance].total - world.match.scores[player.alliance].total
+        : 0;
+      if (player && threat(world, player) && lead >= TUNE[this.bots[0].level].defendLead) {
         const near = (b: OpponentBot): number => {
           const r = world.robots.find((x) => x.id === b.robotId);
           return r ? Math.hypot(r.pos.x - player.pos.x, r.pos.y - player.pos.y) : Infinity;
@@ -176,11 +186,16 @@ export class BotTeam {
           want = [...this.bots].sort((a, b) => near(a) - near(b))[0].robotId;
         } else {
           const g = goalOf(world, player.alliance);
-          if (Math.hypot(g.x - player.pos.x, g.y - player.pos.y) < 70) want = lead.robotId;
+          if (Math.hypot(g.x - player.pos.x, g.y - player.pos.y) < 70) want = first.robotId;
         }
       }
     }
-    if (want !== this.defenderId && world.time - this.switchedAt >= ROLE_HOLD_S) {
+    // NO DEFENCE INTO THE ENDGAME. The player is about to park, and in DECODE any contact with a
+    // robot in its BASE is a MAJOR (G427) — so the defender is called off at once, not after
+    // the usual role hold.
+    const late = world.match.phase === 'teleop' && world.match.phaseTimeLeft <= C.ENDGAME_START + 5;
+    if (late) want = null;
+    if (want !== this.defenderId && (late || world.time - this.switchedAt >= ROLE_HOLD_S)) {
       this.defenderId = want;
       this.switchedAt = world.time;
     }
@@ -466,7 +481,7 @@ export class OpponentBot {
     // it lands in our LOADING ZONE for us to collect. NECTAR is worth having all match — three
     // of them in the up cell and three POLLEN tip it — so it is entered as soon as it is earned.
     const callNectar =
-      !!bb && full && this.slot === 0 && bb.nectarStock[a] > 0 &&
+      !!bb && full && this.team.bots[0] === this && bb.nectarStock[a] > 0 &&
       (bb.nectarDue[a] > 0 || flowerTime) && world.tick - m.lastPress >= PRESS_EVERY * 2;
     const withNectar = (cmd: RobotCommand): RobotCommand => {
       if (callNectar) {
@@ -818,8 +833,9 @@ export class OpponentBot {
       if (Math.abs(b.pos.x) > C.FIELD_HALF - wall || Math.abs(b.pos.y) > C.FIELD_HALF - wall) continue;
       if (this.keepOut.some((z) => Math.hypot(b.pos.x - z.pos.x, b.pos.y - z.pos.y) < z.r + halfDiag(r))) continue;
       // the OPPONENT'S LOADING ZONE is where their human player feeds them: going in there
-      // means contact with them in a protected zone (G426), and in BIOBUZZ it is their NECTAR
-      if (inOpponentLoading(this.game, r.alliance, b.pos)) continue;
+      // while one of them is nearby is contact in a protected zone (G426) waiting to happen
+      if (inOpponentLoading(this.game, r.alliance, b.pos) && this.others.some((o) =>
+        o.alliance !== r.alliance && Math.hypot(o.pos.x - b.pos.x, o.pos.y - b.pos.y) < 40)) continue;
       let d = Math.hypot(b.pos.x - r.pos.x, b.pos.y - r.pos.y);
       // stick with the current target unless something is clearly closer (no dithering)
       if (key === m.target) d -= 8;
@@ -914,8 +930,30 @@ export class OpponentBot {
     // NEVER SHOVE ANOTHER ROBOT: within reach of one, any drive toward it is removed and
     // turned SIDEWAYS (toward whichever side the target lies), so a robot in the way is driven
     // round, not through. Pushing a robot against something is a PIN.
+    // KEEP-OUT ZONES PUSH. Removing the approach is not enough for them: a bot shoved in, or
+    // whose target spot happens to lie inside one, would otherwise sit there. So inside one it
+    // is driven back OUT, harder the deeper it is.
+    // ...and in the DECODE endgame an OPPONENT is one too: a robot parking in its BASE may
+    // drive into us, and the MAJOR (G427) is ours whoever moved, so we get out of its way.
+    const endgame = this.keepOut.length > 1;
+    const pushers = endgame
+      ? [...this.keepOut, ...this.others.filter((o) => o.alliance !== r.alliance).map((o) => ({ pos: o.pos, r: halfDiag(o) + 8 }))]
+      : this.keepOut;
+    for (const z of pushers) {
+      const R = halfDiag(r) + z.r;
+      const ox = r.pos.x - z.pos.x;
+      const oy = r.pos.y - z.pos.y;
+      const od = Math.hypot(ox, oy) || 1;
+      if (od >= R) continue;
+      const k = vmax * Math.min(1, (R - od) / 6);
+      fx += (ox / od) * k;
+      fy += (oy / od) * k;
+    }
+    // a wider berth for OPPONENTS in the DECODE endgame, when touching one near its BASE is a
+    // MAJOR (G427) whichever robot moved
+    const wide = endgame ? 14 : 6;
     const obstacles = [
-      ...this.others.map((o) => ({ pos: o.pos, r: halfDiag(o) + 6 })),
+      ...this.others.map((o) => ({ pos: o.pos, r: halfDiag(o) + (o.alliance === r.alliance ? 6 : wide) })),
       ...this.keepOut,
     ];
     for (const o of obstacles) {
@@ -979,7 +1017,7 @@ function keepOutZones(world: World, a: Alliance): { pos: Vec2; r: number }[] {
   const g = goalSide(opp);
   const zones = [{ pos: { x: g * (C.FIELD_HALF - C.CLASSIFIER_W), y: 0.5 }, r: 12 }];
   if (world.match.phase === 'teleop' && world.match.phaseTimeLeft <= C.ENDGAME_START + 3) {
-    zones.push({ pos: { x: driverSide(opp) * C.BASE_CENTER.x, y: C.BASE_CENTER.y }, r: 16 });
+    zones.push({ pos: { x: driverSide(opp) * C.BASE_CENTER.x, y: C.BASE_CENTER.y }, r: 22 });
   }
   return zones;
 }
@@ -1185,10 +1223,14 @@ function clampField(p: Vec2): Vec2 {
   return { x: clamp(p.x, -m, m), y: clamp(p.y, -m, m) };
 }
 
-/** Build the bots for a set of opponent ids, as one coordinated team. */
-export function makeBots(ids: number[], level: BotLevel): OpponentBot[] {
+/**
+ * Build bots for a set of robot ids on ONE alliance, as one coordinated team. `firstSlot`
+ * spreads their spots: the player's TEAMMATE bot takes slot 1, leaving slot 0's spots — the
+ * obvious ones — to the human it is playing beside.
+ */
+export function makeBots(ids: number[], level: BotLevel, firstSlot = 0): OpponentBot[] {
   const team = new BotTeam();
-  const bots = ids.map((id, i) => new OpponentBot(id, level, i, team));
+  const bots = ids.map((id, i) => new OpponentBot(id, level, firstSlot + i, team));
   team.bots.push(...bots);
   return bots;
 }

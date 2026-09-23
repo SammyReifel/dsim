@@ -1,6 +1,33 @@
-# HANDOFF — 2026-09-23b (opponent bots, round 2)
+# HANDOFF — 2026-09-23c (Nightmare bots + a teammate bot)
 
-**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (33 checks, all three
+**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (44 checks) are
+green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
+
+**Done** (`src/bots/`):
+- **NIGHTMARE level.** It is Hard, flat out, with two changes:
+  - it drives the fastest legal gearing (`botSetup` → `rpmLimits().max`);
+  - it defends only once its alliance LEADS by `defendLead` (15). Behind or level, every bot
+    scores, so it always plays to win rather than to annoy. Against an idle player it never
+    defends at all.
+  - Measured 2-bot pairs vs an idle player: Normal 442, Hard 421, Nightmare 458. Against a
+    Normal bot, Nightmare wins in DECODE (376–232) and BIOBUZZ (173–136).
+- **TEAMMATE bot** (`GameSettings.botPartner`, robot id 1, `makeBots([1], level, 1)`). It is a
+  team of one whose "player" is on its own alliance, so it never defends. It takes slot 1's
+  spots, leaving slot 0's to the human, and takes the partner-dummy slot in free drive.
+- **DECODE manners:**
+  - Defence switches off at once in the last `ENDGAME_START + 5` seconds.
+  - Keep-out zones now PUSH a bot out, not just stop the approach.
+  - In the endgame, opponents are push zones too, because G427 bills contact near a base
+    whoever moved.
+  - The opponent's loading zone is skipped only while an opponent is within 40 in of it.
+    Skipping it always halved DECODE scoring.
+- UI: the picker is labelled "Bots": opponents 0/1/2, a teammate toggle, four levels.
+
+**Known:** a Nightmare pair against an idle DECODE player draws ~8 MINORs (herding at speed).
+
+## HANDOFF — 2026-09-23b (opponent bots, round 2)
+
+`npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (33 checks, all three
 games) are green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
 
 **Done** (`src/bots/`):
