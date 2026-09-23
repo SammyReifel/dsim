@@ -55,7 +55,7 @@ const idle = (): RobotCommand => ({
   driveX: 0, driveY: 0, rotate: 0, leftDrive: 0, rightDrive: 0, intake: false, fire: false,
 });
 
-type BotMemory = { tick: number; pos: Vec2; stalled: number; detour: Vec2 | null; detourUntil: number; escapes: number; homeY: number; patrolY: number; shotLane: 'inner' | 'outer' | null; laneLockedUntil: number; crossing: boolean; fireTick: number; fireLoad: number };
+type BotMemory = { tick: number; pos: Vec2; stalled: number; detour: Vec2 | null; detourUntil: number; escapes: number; homeY: number; patrolY: number; shotLane: 'inner' | 'outer' | null; laneLockedUntil: number; crossing: boolean; rehome: boolean; fireTick: number; fireLoad: number };
 const botMemory = new WeakMap<RobotState, BotMemory>();
 
 const skill = {
@@ -69,7 +69,7 @@ function memoryFor(world: World, robot: RobotState): BotMemory {
   let memory = botMemory.get(robot);
   if (!memory || world.tick < memory.tick) {
     const homeY = robot.pos.y < 0 ? -1 : 1;
-    memory = { tick: world.tick, pos: { ...robot.pos }, stalled: 0, detour: null, detourUntil: 0, escapes: 0, homeY, patrolY: homeY * 42, shotLane: null, laneLockedUntil: 0, crossing: false, fireTick: world.tick, fireLoad: 0 };
+    memory = { tick: world.tick, pos: { ...robot.pos }, stalled: 0, detour: null, detourUntil: 0, escapes: 0, homeY, patrolY: homeY * 42, shotLane: null, laneLockedUntil: 0, crossing: false, rehome: false, fireTick: world.tick, fireLoad: 0 };
     botMemory.set(robot, memory);
   }
   const elapsed = world.tick - memory.tick;
@@ -121,6 +121,7 @@ export function bbOpponentCommand(world: World, robot: RobotState, difficulty: B
   let target: Vec2 | null = null;
   let crossing = false;
   if (carrying) {
+    memory.rehome = false;
     // Stay outside the CELL mouth and the central frame. A turret can keep moving
     // along this lane; a dumper travels there before asking Aim Assist to turn it.
     const spot = (lane: 'inner' | 'outer'): Vec2 => lane === 'outer'
@@ -148,14 +149,16 @@ export function bbOpponentCommand(world: World, robot: RobotState, difficulty: B
     crossing = memory.crossing;
     if (crossing) target = { x: allianceSign * 54, y: scoringSide * 44 };
   } else {
+    if (memory.shotLane) memory.rehome = robot.pos.y * memory.homeY < 0;
     memory.shotLane = null;
     memory.crossing = false;
+    if (robot.pos.y * memory.homeY > 32) memory.rehome = false;
     // Perimeter POLLEN can sit behind a wall from a chassis-sized robot's point
     // of view. Chasing it was the source of long, motionless wall presses.
     const candidates = world.balls
       .filter((ball) => ball.state.kind === 'ground' && ball.color === 'yellow' &&
         ball.pos.x * allianceSign >= 2 && Math.abs(ball.pos.x) < 60 && Math.abs(ball.pos.y) < 60 &&
-        !(Math.abs(ball.pos.x) < 30 && Math.abs(ball.pos.y) < 25))
+        !(Math.abs(ball.pos.x) < 36 && Math.abs(ball.pos.y) < 36))
       .map((ball) => {
         const dx = ball.pos.x - robot.pos.x;
         const dy = ball.pos.y - robot.pos.y;
@@ -181,6 +184,7 @@ export function bbOpponentCommand(world: World, robot: RobotState, difficulty: B
       if (Math.abs(robot.pos.y - memory.patrolY) < 8) memory.patrolY = memory.homeY * (Math.abs(memory.patrolY) > 40 ? 28 : 50);
       target = { x: allianceSign * 42, y: memory.patrolY };
     }
+    if (memory.rehome) target = { x: allianceSign * 51, y: memory.homeY * 44 };
   }
   if (!target) return cmd;
 

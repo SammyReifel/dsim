@@ -6,6 +6,8 @@ alliance's active scoring CELL, and choose occupied shooting lanes dynamically.
 The Hauler waits until it reaches a valid dump spot before holding fire; tank
 steering can reverse for targets behind it. Route selection and wall avoidance
 were adjusted to prevent repeated contact at the HIVE frame and perimeter.
+After shooting, bots return to their collection half on a separate outer route;
+bots skip POLLEN too close to the frame for their chassis to approach cleanly.
 Practice type dropdowns show only the selected robot type while keeping
 accessible labels. Computer robot names show the preset type without
 "Opponent 1", "Opponent 2", or "Teammate" prefixes.
@@ -15,6 +17,8 @@ and turret setups, and checks that each bot fires, both alliances score, and
 long stalls and contact stay bounded. `npm test` passed (BIOBUZZ 1308 checks),
 `npm run build`, `npm run uiaudit`, and `git diff --check` passed. Additional
 headless seeds 42/555/2026 scored for both alliances in all three formations.
+The longest translational stop in those runs was 113 ticks (under one second),
+with no sustained robot contact.
 No visual simulation was used to validate bot behavior. Local preview remains
 at `http://127.0.0.1:5173/biobuzz/modes`.
 

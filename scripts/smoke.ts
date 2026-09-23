@@ -1678,7 +1678,7 @@ const slotCount = (w: World, a: 'red' | 'blue') =>
       }
     }
     check(`BIOBUZZ ${label} bots do not freeze or push each other for long`,
-      [...longestStop.values()].every((ticks) => ticks < 250) && longestContact < 150,
+      [...longestStop.values()].every((ticks) => ticks < 150) && longestContact < 100,
       `stops=${JSON.stringify([...longestStop])} contact=${longestContact}`);
     check(`BIOBUZZ ${label} bots each fire during a full practice match`,
       match.robots.slice(1).every((r) => r.lastFireAt > 0));
