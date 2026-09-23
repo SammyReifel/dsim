@@ -242,12 +242,31 @@ export function MatchSetup({
         <div className="ds-opts fill">
           <button
             className={`ds-opt mini ${settings.practiceDummies ? 'on' : ''}`}
-            onClick={() => set({ practiceDummies: !settings.practiceDummies })}
+            onClick={() => set({ practiceDummies: !settings.practiceDummies, opponentCount: 0 })}
           >
             <span className="ot">Practice dummies {settings.practiceDummies ? 'ON' : 'OFF'}</span>
           </button>
         </div>
       </section>
+
+      {settings.game === 'biobuzz' && (
+        <section className="ds-sec">
+          <h2>Opponent robots</h2>
+            <p className="ds-hint">Add computer opponents to BIOBUZZ Solo Practice or Free Drive.</p>
+            <div className="ds-opts three">
+              {([0, 1, 2] as const).map((count) => (
+                <button
+                  key={count}
+                  className={`ds-opt mini ${settings.opponentCount === count ? 'on' : ''}`}
+                  onClick={() => set({ opponentCount: count, practiceDummies: false })}
+                  aria-pressed={settings.opponentCount === count}
+                >
+                  <span className="ot">{count === 0 ? 'No opponents' : `${count} opponent${count === 1 ? '' : 's'}`}</span>
+                </button>
+              ))}
+            </div>
+        </section>
+      )}
 
       {runsAutoPaths && (
         <section className="ds-sec">

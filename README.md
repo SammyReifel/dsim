@@ -20,6 +20,9 @@ turreted flywheel shooter, and play a full solo match with faithful DECODE scori
   field-centric or robot-centric driving, aim assist / auto intake / auto fire
   configured in the menu, keyboard and gamepad input, configurable chassis size and
   intake style (compact vs extended) within the 18 in FTC limit.
+- **BIOBUZZ offline opponents**: choose one or two computer-driven robots in
+  Configure → Match for Solo Practice or Free Drive. They collect POLLEN and shoot
+  at their HIVE. Stationary Free Drive dummies remain a separate option.
 
 ## Run it
 

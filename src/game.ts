@@ -16,6 +16,7 @@ import type {
 } from './types';
 import * as C from './config';
 import { DEFAULT_ASSISTS, DEFAULT_SPEC, type RobotSetup } from './sim/spawn';
+import { bbOpponentCommand, bbOpponentSetups } from './games/biobuzz/opponents';
 import { moduleFor, gameOf } from './games';
 import type { GameModule } from './games';
 import { accelMultiplier as chainAccelMultiplier, type EndgameState } from './games/chain/state';
@@ -473,7 +474,9 @@ export class GameController {
         autoPathEnabled: s.autoPathEnabled,
       },
     ];
-    if (s.mode === 'free' && s.practiceDummies) {
+    if (s.game === 'biobuzz' && s.opponentCount > 0) {
+      setups.push(...bbOpponentSetups(s));
+    } else if (s.mode === 'free' && s.practiceDummies) {
       // three idle default robots as physical obstacles / parking practice
       const opp: Alliance = s.alliance === 'blue' ? 'red' : 'blue';
       const dummy = (id: number, alliance: Alliance, startIndex: number): RobotSetup => ({
@@ -813,6 +816,13 @@ export class GameController {
     let steps = 0;
     const commands = new Map<number, RobotCommand>([[this.localRobotId, local]]);
     while (this.acc >= C.SIM_DT && steps < C.MAX_STEPS_PER_FRAME) {
+      if (this.gameId === 'biobuzz') {
+        for (const r of this.world.robots) {
+          if (r.id !== this.localRobotId && !r.passive) {
+            commands.set(r.id, localizeCommand(bbOpponentCommand(this.world, r)));
+          }
+        }
+      }
       this.mod.step(this.world, C.SIM_DT, commands);
       this.recorder?.record(this.world.tick, commands);
       // counted HERE, beside the record call, because it must measure exactly the ticks that

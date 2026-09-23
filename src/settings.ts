@@ -54,6 +54,7 @@ export function defaultSettings(): GameSettings {
     // GATE (index 0, close) + AUDIENCE (index 1, far) are the default per-category picks
     startMemory: { close: { index: 0, pose: null }, far: { index: 1, pose: null } },
     practiceDummies: false,
+    opponentCount: 0,
     audio: {
       volume: { master: 1, game: 1, shoot: 1, intake: 1, gate: 1, beep: 1, alert: 1, voice: 1 },
       sounds: true,
@@ -285,6 +286,9 @@ export function coerceSettings(raw: unknown): GameSettings {
       out.loadouts = archive;
     }
     if (typeof s.practiceDummies === 'boolean') out.practiceDummies = s.practiceDummies;
+    if (typeof s.opponentCount === 'number' && Number.isFinite(s.opponentCount)) {
+      out.opponentCount = clamp(Math.round(s.opponentCount), 0, 2);
+    }
     if (typeof s.audio === 'object' && s.audio !== null) {
       const au = s.audio as Record<string, unknown>;
       const vol = au.volume;

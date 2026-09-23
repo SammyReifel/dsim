@@ -177,6 +177,9 @@ import {
 import { beamBlock, beamDrag, beamDragFactor, beamStrafeBlock, beamForwardness, beamRide, canCrossBeams, cogFactor, wheelsOnBeam, CHAIN_BEAMS } from '../src/games/chain/beams';
 import { butterflyTankRpmLimits, driveParams, massLimits, rpmLimits, motorStep, driveSummary, widthLimits, pushForce, shoveMass } from '../src/sim/drivetrain';
 import { coerceSettings, defaultSettings, switchGame, syncAudioMirrors } from '../src/settings';
+import { bbOpponentCommand, bbOpponentSetups } from '../src/games/biobuzz/opponents';
+import { createBiobuzzWorld } from '../src/games/biobuzz/spawn';
+import { biobuzzStep } from '../src/games/biobuzz/step';
 import type { RobotSetup } from '../src/sim/spawn';
 import { DEFAULT_BINDINGS, KEY_ACTIONS, PAD_ACTIONS, mergeBindings } from '../src/input/bindings';
 import { quantizeCommand, dequantizeCommand, localizeCommand, sanitizeQCommand, slimWorld, unslimWorld, encodeBallDelta, applyBallDelta } from '../src/net/protocol';
@@ -1539,6 +1542,42 @@ const slotCount = (w: World, a: 'red' | 'blue') =>
     r.passive === true && r.hopper.length === hopper0,
     `passive=${r.passive} hopper ${hopper0}->${r.hopper.length}`,
   );
+}
+
+// ---- BIOBUZZ offline computer opponents ------------------------------------
+{
+  const settings = { ...switchGame(defaultSettings(), 'biobuzz'), mode: 'free' as const, opponentCount: 2 };
+  const opponents = bbOpponentSetups(settings);
+  const setups: RobotSetup[] = [
+    { id: 0, alliance: 'blue', spec: settings.spec, assists: settings.assists, startIndex: 0 },
+    ...opponents,
+  ];
+  check('opponent count is persisted and clamped',
+    coerceSettings({ opponentCount: 2 }).opponentCount === 2 &&
+    coerceSettings({ opponentCount: 99 }).opponentCount === 2 &&
+    coerceSettings({ opponentCount: -1 }).opponentCount === 0);
+  check('BIOBUZZ opponents spawn on the other alliance at distinct anchors',
+    opponents.length === 2 && opponents[0].alliance === 'red' && opponents[1].alliance === 'red' &&
+    opponents[0].startIndex !== opponents[1].startIndex && !opponents[0].passive && !opponents[1].passive);
+  check('other seasons have no computer opponents', bbOpponentSetups(defaultSettings()).length === 0);
+  const w = createBiobuzzWorld('free', 42, setups, settings);
+  const first = w.robots[1];
+  const start = { ...first.pos };
+  const command = localizeCommand(bbOpponentCommand(w, first));
+  check('opponent command runs intake/fire', command.intake && command.fire);
+  for (let i = 0; i < 900; i++) {
+    const commands = new Map<number, RobotCommand>();
+    for (const r of w.robots.slice(1)) commands.set(r.id, localizeCommand(bbOpponentCommand(w, r)));
+    biobuzzStep(w, SIM_DT, commands);
+  }
+  check('opponent robot moves in offline play',
+    Math.hypot(first.pos.x - start.x, first.pos.y - start.y) > 5);
+  check('BIOBUZZ opponents can score into their HIVE',
+    (w.biobuzz?.hives.red.tips ?? 0) > 0 && w.match.scores.red.total > 0);
+  const run = runRecordMatch(42, setups, (_tick, world) => new Map(
+    world.robots.slice(1).map((r) => [r.id, bbOpponentCommand(world, r)]),
+  ), { mode: 'free', stopTick: 120, game: 'biobuzz' });
+  check('opponent commands reproduce in replay', worldHash(simulateReplay(run.replay)) === worldHash(run.world));
 }
 
 // ---- shooting & visible classification -------------------------------------

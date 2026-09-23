@@ -748,6 +748,8 @@ export interface GameSettings {
    * flat fields above are always the ACTIVE game's copy; `switchGame` swaps them. */
   loadouts?: Partial<Record<GameId, GameLoadout>>;
   practiceDummies: boolean;
+  /** BIOBUZZ computer opponents in offline Free Drive and Solo Practice. */
+  opponentCount: number;
   /** the ACTIVE resolved driver assists (what spawns + goes on the wire).
    * MIRRORED from `spec.assists`, which is where the preference is actually STORED — the
    * robot owns its assists, so loading a saved robot / preset / the other game's loadout

@@ -1,3 +1,16 @@
+# HANDOFF — 2026-09-23 (fork: BIOBUZZ offline computer opponents)
+
+**READ FIRST.** Added a 0/1/2 opponent selector to the BIOBUZZ Configure → Match page
+for Solo Practice and Free Drive. Opponents spawn on the other alliance at separate
+anchors, collect POLLEN, and shoot at their own HIVE. Their per-tick commands are
+recorded in solo replays. DECODE and Chain Reaction have no new opponent control.
+The old stationary Free Drive dummies remain available as a separate choice.
+
+`npm test` passed both suites, `npm run build` passed, and `npm run uiaudit` passed.
+The local browser showed the BIOBUZZ controls and two labeled robots. Headless play
+confirmed a HIVE tip and points from the opponents. This branch is for the
+`SammyReifel/dsim` fork; it has not been deployed to playdsim.com.
+
 # HANDOFF — 2026-09-17b (main: the record-restart regression, fixed and deployed)
 
 **READ FIRST.** The alpha merge (below) shipped a regression: **restarting a record run was
