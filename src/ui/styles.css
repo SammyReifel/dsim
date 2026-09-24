@@ -1692,7 +1692,8 @@ button {
   animation: win-pulse 0.7s ease-out;
 }
 .results-head.reveal .res-verdict {
-  animation: verdict-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+  /* exponential ease-out: the verdict lands and settles, it does not bounce */
+  animation: verdict-slam 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* the breakdown table + buttons fade up under the headline reveal */
 .overlay-panel.results.revealed .results-table,
@@ -1957,9 +1958,11 @@ button {
   flex-wrap: wrap;
   gap: 6px 14px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--ds-round);
   background: var(--panel-2);
-  border-left: 3px solid var(--border);
+  /* a whole alliance-tinted outline, not a side stripe: the row says which side it is
+     with its edge, the way the score blocks above say it with their fill */
+  border: 1px solid var(--border);
   opacity: 0;
   transform: translateX(-14px);
 }
@@ -1973,10 +1976,10 @@ button {
   }
 }
 .elo-row.red {
-  border-left-color: var(--red);
+  border-color: color-mix(in srgb, var(--ds-red-chip) 60%, var(--ds-line));
 }
 .elo-row.blue {
-  border-left-color: var(--blue);
+  border-color: color-mix(in srgb, var(--ds-blue-chip) 60%, var(--ds-line));
 }
 .elo-row.you {
   box-shadow: 0 0 0 1px var(--amber) inset;
