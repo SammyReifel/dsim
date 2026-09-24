@@ -1,6 +1,49 @@
-# HANDOFF — 2026-09-23c (Nightmare bots + a teammate bot)
+# HANDOFF — 2026-09-24 (BIOBUZZ bots, deep pass)
 
-**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (44 checks) are
+**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (62 checks) are
+green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
+The owner has said to focus on BIOBUZZ only. The DECODE and CR bot paths are untouched and still
+tested, but not being improved.
+
+**Reported:** "I can still beat Nightmare", "everyone is double-turreted except me", "at one point
+all the robots just stop moving".
+
+**Done** (`src/bots/`):
+- **Bots drive the PLAYER'S build** (`botSetup(..., { spec: settings.spec })`) in BIOBUZZ and DECODE.
+  Chain Reaction keeps the default. The brain reads what the build can do (`bbCaps`: turret or
+  dumper, whether it can carry NECTAR, Box Tube, intake edges) and plays to it.
+- **The shooting map was MEASURED** (a robot parked on a 6-in grid, fire held, counting what went
+  in). A TURRET lands from almost the whole up-cell side of the field (|y| ≥ 20), bar a pocket
+  under the cell. A DUMPER needs a ring 14–38 in from the cell, outboard. That is `bbZone`. Bots
+  used to shoot from one fixed spot, and from some of those spots nothing released.
+  ⚠️ Read hive state FRESH each tick in experiments: the sim replaces `world.biobuzz.hives[a]`, so
+  a reference taken before stepping goes stale. The first map read all zeros because of this.
+- **Sharp play** (Hard and Nightmare): turrets hold fire while collecting on the right side, so
+  they shoot on the move. A loaded bot heads for the NEXT up cell while the hive is still swinging.
+  If nothing has left the hopper in 1.5 s, it moves to another spot (`shootShift`).
+- **What "stop moving" was:**
+  - (a) A lone Nightmare bot DEFENDED an idle player for 95 s, because holding pollen counted as a
+    threat. A lone bot now never defends by role, and a threat must be moving or already where
+    its shots land.
+  - (b) A bot close to, but not in reach of, a flower counted as progress forever (`nearSince`).
+  - (c) DECODE auto: bots idled once their half was empty.
+  - Plus a generic WATCHDOG: no movement for 3 s without `holding` means blacklist the target and
+    back out.
+- Target choice counts the trip to the shooting zone after pickup, and nearby clusters.
+  Tanks drive in reverse when that is the smaller turn, or when the plan faces away (Box Tube,
+  rear mouth).
+- **Levels are a measured curve.** A single StarterBot bot vs a Nightmare-level opponent scores
+  88 / 172 / 300 for Easy / Normal / Nightmare. Easy and Normal are slower, re-plan less often and
+  are not "sharp".
+- A single Nightmare bot vs an idle player scores 212–397 depending on the build (8–19 tips).
+  A Nightmare pair beat a Nightmare-level player bot 330–190.
+
+**Known:** no preset carries NECTAR *and* has a Box Tube, so flower play only shows up on a
+custom build. Pauses of about 3 s while the hive swings are expected.
+
+## HANDOFF — 2026-09-23c (Nightmare bots + a teammate bot)
+
+`npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (44 checks) are
 green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
 
 **Done** (`src/bots/`):

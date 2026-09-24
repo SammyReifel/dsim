@@ -11,7 +11,7 @@ const LEVELS: [BotLevel, string][] = [
 /** what the two levels that are more than "faster" actually change */
 const LEVEL_NOTE: Partial<Record<BotLevel, string>> = {
   hard: 'Hard bots work as a team and play defence when you’re carrying.',
-  nightmare: 'Nightmare bots drive faster robots and play to win. They only defend once they’re ahead.',
+  nightmare: 'Nightmare bots play flat out to beat you. They only defend once they’re ahead.',
 };
 
 /**
@@ -19,6 +19,7 @@ const LEVEL_NOTE: Partial<Record<BotLevel, string>> = {
  * the mode select and Configure → Match setup can never disagree about the options. Bots play
  * in the two OFFLINE modes only — an online room has real people in it.
  *
+ * Every bot drives the PLAYER'S build (`botSetup`), so the level is the only difference.
  * There is no play-style choice: the level decides it, and it applies to every bot, teammate
  * included. Hard and Nightmare get a line saying what else they do; the other two do what
  * their names say.
