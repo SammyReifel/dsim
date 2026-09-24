@@ -148,7 +148,7 @@ export const DEFAULT_KNOBS: BotKnobs = {
   pullStack: 6,
   swingGrab: 30,
   shootStall: 1.5,
-  autoPark: true,
+  autoPark: false,
 };
 
 /** seconds without closing on a target before the bot gives up on it */
