@@ -1,9 +1,9 @@
 /* =====================================================================
-   DSim — "Low-Poly" design system (see DESIGN.md at the repo root)
-   Indie-game tactility: a warm off-white floor, desaturated pastels,
-   deep-charcoal (never black) ink, and depth built from HARD offset
-   shadows rather than blur — a fixed sun from the top-left, as in an
-   isometric toy world. Screens are built with the `ds-` classes below.
+   DSIM — "The Parts Catalog" design system (see DESIGN.md at the repo root)
+   Cool catalog paper, graphite ink and plate bands, hairline rules, 2–3px
+   corners and NO shadows; one committed colour, anodized honey-gold, for the
+   thing to press next and the page you are on. Screens are built with the
+   `ds-` classes below and the catalog components in catalog.css.
 
    The FIELD CANVAS stays dark (src/render/ is untouched). The HUD floats
    CARDS over it, and those cards DO follow the theme — see `--ds-hud*` below.
@@ -21,40 +21,50 @@
    dark block on purpose. */
 :root {
   /* ---- surfaces (Level 0 floor → Level 1 cards) ---- */
-  --ds-bg: #f9faf7;
-  --ds-bar: #f3f4f1;
+  --ds-bg: #eceff1;
+  --ds-bar: #f1f3f5;
   --ds-panel: #ffffff;
-  --ds-tile: #edeeec;
+  --ds-tile: #f1f3f5;
 
   /* ---- ink: deep charcoal-grey, never pure black (DESIGN.md "Neutrals") ---- */
-  --ds-ink: #191c1b;
-  --ds-ink-dim: #404945;
+  --ds-ink: #14171a;
+  --ds-ink-dim: #363d44;
   /* DESIGN.md's `outline` #707975 lands at ~3.9:1 on the floor — below AA for
      body text. Darkened to clear 4.5:1; the pastel outline lives on --ds-line. */
-  --ds-mut: #5c645f;
+  --ds-mut: #56606a;
 
-  --ds-line: #c0c9c4;
-  --ds-line-soft: #d9dad8;
+  --ds-line: #c3cad0;
+  --ds-line-soft: #d8dde1;
   /* INTERACTIVE boundaries only (WCAG 1.4.11 wants 3:1). `.ds-input` is a --ds-tile
      fill on a --ds-panel card = 1.16:1, so its 1px border IS the whole control.
      Card strokes stay on --ds-line — the pastel look depends on it staying soft.
      3.06:1 on --ds-panel; only ~2.6 on --ds-tile, so an input recessed into a tile
      well needs darker (#7d8883). Measure before assuming. */
-  --ds-line-strong: #8b9691;
+  --ds-line-strong: #76828c;
 
   /* ---- primary: soft mint ---- */
-  --ds-accent: #366758;
+  --ds-accent: #7a4e00;
   --ds-accent-ink: #ffffff;
   /* the darker hue under a "thick" keycap button + the block-shadow it presses into */
-  --ds-accent-edge: #24463b;
-  --ds-accent-soft: #b5ead7;
-  --ds-accent-soft-ink: #1c4f41;
+  --ds-accent-edge: #5a3a00;
+  --ds-accent-soft: #ffe49a;
+  --ds-accent-soft-ink: #4a3000;
   /* The MUTED sibling of --ds-accent-soft-ink, for sub-labels on a SELECTED row.
      --ds-mut is tuned against --ds-panel and lands at 3.78:1 once the row turns
      mint, so secondary text needs an ink grounded on --ds-accent-soft like the
      primary one. Replaces a `color-mix(--ds-accent-soft-ink 78%, transparent)`
      that cleared AA on dark (4.7:1) but not on light (4.2:1). */
-  --ds-accent-soft-mut: #2f6455;
+  --ds-accent-soft-mut: #5e3f00;
+  /* THE PARTS CATALOG's one committed colour: anodized honey-gold. A FILL with fixed ink
+     (graphite), the same in both themes — the catalog's bright fields, the primary order
+     button, the thumb-index tab of the page you are on. As TYPE use --ds-accent. */
+  --ds-honey: #f5b400;
+  --ds-honey-deep: #d49a00;
+  --ds-honey-ink: #14171a;
+  /* the catalog's ink band (masthead, order-code strip): graphite in both themes */
+  --ds-plate: #14171a;
+  --ds-plate-ink: #eceff1;
+  --ds-plate-mut: #a9b2ba;
 
   /* ---- secondary + categorical accents (chips, icon containers, terrain) ---- */
   --ds-blush: #fdd9c0;
@@ -64,7 +74,7 @@
   /* readable ink for the sky family — the pastel itself is a FILL, never type */
   --ds-sky-ink: #0e6f8e;
 
-  --ds-you: rgba(54, 103, 88, 0.1);
+  --ds-you: rgba(245, 180, 0, 0.16);
 
   /* ---- shape: "soft-blocky" molded plastic ---- */
   /* SPACING — a 4px grid. See docs/ui-standard.md §2. Before these existed every
@@ -86,20 +96,20 @@
   --ds-t-lg: 15px;
   --ds-t-xl: 20px;
   --ds-t-2xl: 28px;
-  --ds-round-sm: 4px;
-  --ds-round: 8px;
-  --ds-round-md: 12px;
-  --ds-round-lg: 16px;
-  --ds-round-xl: 24px;
+  --ds-round-sm: 2px;
+  --ds-round: 3px;
+  --ds-round-md: 4px;
+  --ds-round-lg: 6px;
+  --ds-round-xl: 8px;
   --ds-round-full: 9999px;
 
   /* ---- elevation: low-blur, high-opacity, offset to the bottom-right ---- */
-  --ds-block: 4px 4px 0 var(--ds-line-soft);
-  --ds-block-sm: 2px 2px 0 var(--ds-line-soft);
+  --ds-block: 0 0 0 transparent;
+  --ds-block-sm: 0 0 0 transparent;
   /* the "thick" bottom edge under a pressable keycap: a darker shade of the
      element's own colour. --ds-edge for mint, --ds-edge-soft for neutral fills. */
-  --ds-edge: 0 3px 0 var(--ds-accent-edge);
-  --ds-edge-soft: 0 3px 0 var(--ds-line);
+  --ds-edge: 0 0 0 transparent;
+  --ds-edge-soft: 0 0 0 transparent;
 
   /* fixed scoring semantics (never the interface accent). These break the pastel
      harmony ON PURPOSE — alliance + artifact identity must command attention.
@@ -166,8 +176,8 @@
 
   /* Jakarta = the friendly workhorse; Grotesk = labels + technical data (scores,
      timers, keycaps). Both are VARIABLE cuts, so `font-weight: 750` is real. */
-  --ds-font-ui: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --ds-font-mono: 'Space Grotesk Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --ds-font-ui: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-mono: 'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* =====================================================================
@@ -202,33 +212,35 @@
      1.34, so the sun stays in the top-left and the shadow RULES don't change.
      Bonus: #20262c is lighter than the field #14161a, so the canvas reads as a
      recessed well in the app surface. */
-  --ds-bg: #20262c;
-  --ds-bar: #252b32;
-  --ds-panel: #272e35;
-  --ds-tile: #1a2026; /* recessed is DARKER than its panel in both modes */
+  --ds-bg: #0f1215;
+  --ds-bar: #171b1f;
+  --ds-panel: #171b1f;
+  --ds-tile: #0b0e10;
 
-  --ds-ink: #e8eae7;
-  --ds-ink-dim: #b6bcb8;
+  --ds-ink: #eceff1;
+  --ds-ink-dim: #c0c7cd;
   /* #8d9691 was the obvious mirror but lands at 4.52 on --ds-panel — a rounding
      error from failing, the same trap as light mode's #707975. */
-  --ds-mut: #949e98;
+  --ds-mut: #8f99a2;
 
-  --ds-line: #404a52;
-  --ds-line-soft: #04070a; /* the block shadow; see the surfaces note above */
+  --ds-line: #2f373e;
+  --ds-line-soft: #000000;
   /* Interactive borders. The plan proposed #6b7680 (3.29 vs --ds-bg), but an input's
      border is measured against the CARD BEHIND IT, not the floor — and #6b7680 is only
      2.96 on --ds-panel, failing 1.4.11 by 0.04. Light mode tunes to panel too (3.06). */
-  --ds-line-strong: #727d86; /* 3.27 on --ds-panel · 3.63 on --ds-bg */
+  --ds-line-strong: #6d7882;
 
   /* THE INKS INVERT WITH THE FILL. White on the light mint #5fb597 is 2.46:1 —
      the single most dangerous swap in this theme. */
-  --ds-accent: #5fb597;
-  --ds-accent-ink: #0f1214;
-  --ds-accent-edge: #3f7f69; /* keycap edge stays darker than its fill in both modes */
-  --ds-accent-soft: #22463c; /* a mint-tinted dark, not a pale blob */
-  --ds-accent-soft-ink: #8fdcc2;
-  --ds-accent-soft-mut: #7cc0a8; /* muted sibling; see the light block */
-  --ds-you: rgba(95, 181, 151, 0.14);
+  --ds-accent: #f5b400;
+  --ds-accent-ink: #14171a;
+  --ds-accent-edge: #b58400;
+  --ds-accent-soft: #3b2d06;
+  --ds-accent-soft-ink: #ffd35c;
+  --ds-accent-soft-mut: #e6bd4a;
+  --ds-you: rgba(245, 180, 0, 0.14);
+  /* the graphite plate, LIFTED off the near-black page so it still reads as a band */
+  --ds-plate: #23282d;
 
   /* Semantics that must stay READABLE invert. --ds-warn's dark value is essentially
      the pre-redesign --amber: it only became burnt amber to survive the light floor. */
@@ -309,6 +321,79 @@
 }
 
 /* ---- app surface + top bar ------------------------------------------- */
+
+/* =====================================================================
+   THE GAME PART KEEPS ITS OWN LOOK (Parts Catalog redesign, Sept 2026).
+   The redesign replaced the chrome's accent, type, corners and shadows; the in-match
+   HUD was out of scope, so `.game-root` pins those tokens to the values the HUD was
+   designed and contrast-audited with. Neutrals (ink, mut, lines, hud*) are shared.
+   The OVERLAYS inside the game root (results, pause, reconnect) are part of the menu
+   FLOW, not the game, so they switch back to the catalog set below.
+   ===================================================================== */
+.game-root {
+  --ds-accent: #366758;
+  --ds-accent-ink: #ffffff;
+  --ds-accent-edge: #24463b;
+  --ds-accent-soft: #b5ead7;
+  --ds-accent-soft-ink: #1c4f41;
+  --ds-accent-soft-mut: #2f6455;
+  --ds-you: rgba(54, 103, 88, 0.1);
+  --ds-round-sm: 4px;
+  --ds-round: 8px;
+  --ds-round-md: 12px;
+  --ds-round-lg: 16px;
+  --ds-round-xl: 24px;
+  --ds-block: 4px 4px 0 var(--ds-line-soft);
+  --ds-block-sm: 2px 2px 0 var(--ds-line-soft);
+  --ds-edge: 0 3px 0 var(--ds-accent-edge);
+  --ds-edge-soft: 0 3px 0 var(--ds-line);
+  --ds-font-ui: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-mono: 'Space Grotesk Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* the alias resolves where it is declared, so it has to be restated to see the pin */
+  --amber: var(--ds-accent);
+}
+:root[data-theme='dark'] .game-root {
+  --ds-accent: #5fb597;
+  --ds-accent-ink: #0f1214;
+  --ds-accent-edge: #3f7f69;
+  --ds-accent-soft: #22463c;
+  --ds-accent-soft-ink: #8fdcc2;
+  --ds-accent-soft-mut: #7cc0a8;
+  --ds-you: rgba(95, 181, 151, 0.14);
+}
+.game-root .overlay,
+.game-root .net-overlay {
+  --ds-accent: #7a4e00;
+  --ds-accent-ink: #ffffff;
+  --ds-accent-edge: #5a3a00;
+  --ds-accent-soft: #ffe49a;
+  --ds-accent-soft-ink: #4a3000;
+  --ds-accent-soft-mut: #5e3f00;
+  --ds-you: rgba(245, 180, 0, 0.16);
+  --ds-round-sm: 2px;
+  --ds-round: 3px;
+  --ds-round-md: 4px;
+  --ds-round-lg: 6px;
+  --ds-round-xl: 8px;
+  --ds-block: 0 0 0 transparent;
+  --ds-block-sm: 0 0 0 transparent;
+  --ds-edge: 0 0 0 transparent;
+  --ds-edge-soft: 0 0 0 transparent;
+  --ds-font-ui: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-mono: 'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --amber: var(--ds-accent);
+}
+:root[data-theme='dark'] .game-root .overlay,
+:root[data-theme='dark'] .game-root .net-overlay {
+  --ds-accent: #f5b400;
+  --ds-accent-ink: #14171a;
+  --ds-accent-edge: #b58400;
+  --ds-accent-soft: #3b2d06;
+  --ds-accent-soft-ink: #ffd35c;
+  --ds-accent-soft-mut: #e6bd4a;
+  --ds-you: rgba(245, 180, 0, 0.14);
+}
+
 .ds-app {
   /* the app shell is the scroll container (html/body are overflow:hidden for the
      full-screen game canvas), so shell screens taller than the viewport scroll.
@@ -343,13 +428,30 @@
    measured. That also kills a real shift on load: the bar was 57px until the webfont swapped and
    then grew to 63, dragging the whole page down with it. */
 .ds-bar {
+  /* THE MASTHEAD: the catalog's graphite plate with the honey rule under it, in both themes.
+     It re-points the inverting tokens for everything inside it (presence, server menu, the
+     profile popover), so those components need no plate-specific rules of their own. */
+  --ds-ink: var(--ds-plate-ink);
+  --ds-ink-dim: #c9d0d6;
+  --ds-mut: var(--ds-plate-mut);
+  --ds-panel: #1d2226;
+  --ds-tile: #101316;
+  --ds-line: #3a434b;
+  --ds-line-strong: #6d7882;
+  --ds-accent: var(--ds-honey);
+  --ds-accent-ink: var(--ds-honey-ink);
+  --ds-accent-soft: #3b2d06;
+  --ds-accent-soft-ink: #ffd35c;
+  --ds-accent-soft-mut: #e6bd4a;
+  color-scheme: dark;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 14px 22px;
+  gap: var(--ds-s-4);
+  padding: 12px 24px;
   min-height: var(--ds-bar-h);
-  border-bottom: 1px solid var(--ds-line);
-  background: var(--ds-bar);
+  border-bottom: 3px solid var(--ds-honey);
+  background: var(--ds-plate);
+  color: var(--ds-plate-ink);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -357,10 +459,13 @@
 .ds-mark {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ds-s-2);
   font-weight: 900;
-  letter-spacing: 0.05em;
-  font-size: 18px;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 24px;
+  line-height: 1;
   background: none;
   border: 0;
   color: inherit;
@@ -472,8 +577,8 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -590,72 +695,78 @@
 }
 .ds-rail {
   flex: none;
-  width: 214px;
+  width: 220px;
   align-self: stretch;
-  padding: 24px 14px 40px;
+  padding: 24px 0 40px;
   border-right: 1px solid var(--ds-line);
-  background: var(--ds-bar);
+  background: var(--ds-panel);
   display: flex;
   flex-direction: column;
   gap: var(--ds-s-4);
+  overflow: visible; /* the thumb tab runs past the edge (catalog.css) */
 }
 .ds-rail-home {
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--ds-t-sm);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   text-align: left;
-  padding: 8px 10px;
-  border-radius: var(--ds-round);
-  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-s-2);
+  padding: 8px 16px;
+  border: 0;
   background: none;
   color: var(--ds-mut);
   cursor: pointer;
 }
 .ds-rail-home:hover {
   color: var(--ds-ink);
-  border-color: var(--ds-line);
-  background: var(--ds-panel);
 }
 .ds-rail-items {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  border-top: 1px solid var(--ds-line);
 }
 .ds-rail-btn {
+  /* a THUMB-INDEX tab: the page you are on is the honey tab, and it bleeds past the rail's
+     edge into the page the way a catalog's printed tab runs off the trim */
+  position: relative;
   font: inherit;
   text-align: left;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 12px;
-  border-radius: var(--ds-round);
-  border: 1px solid transparent;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ds-line);
   background: none;
-  color: var(--ds-ink-dim);
+  color: var(--ds-ink);
   cursor: pointer;
-  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  transition: background 0.14s, color 0.14s;
 }
 .ds-rail-btn .rl {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .ds-rail-btn .rh {
-  font-size: 12px;
+  font-size: var(--ds-t-sm);
   color: var(--ds-mut);
 }
 .ds-rail-btn:hover {
-  color: var(--ds-ink);
-  background: var(--ds-panel);
-  border-color: var(--ds-line);
+  background: var(--ds-tile);
 }
 .ds-rail-btn.on {
-  background: var(--ds-accent-soft);
-  border-color: var(--ds-accent);
-  color: var(--ds-accent-soft-ink);
-  box-shadow: var(--ds-block-sm);
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
 }
 .ds-rail-btn.on .rh {
-  color: var(--ds-accent-soft-mut);
+  color: var(--ds-honey-ink);
 }
 
 /* ---- friends panel ----------------------------------------------------
@@ -800,8 +911,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: var(--ds-round-full);
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
   font-size: 10px;
   font-weight: 800;
   line-height: 16px;
@@ -1102,8 +1213,9 @@
 /* ---- home: the menu IS the navigation --------------------------------- */
 .ds-main-home {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
+  max-width: 1240px;
 }
 .ds-home {
   width: 100%;
@@ -1132,38 +1244,29 @@
 .ds-home-links {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin: 0 0 var(--ds-s-5);
+  gap: var(--ds-s-4);
 }
 .ds-home-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--ds-round-full);
-  border: 1px solid var(--ds-line);
-  background: var(--ds-panel);
-  color: var(--ds-ink);
-  font-size: 14px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--ds-ink-dim);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.01em;
   text-decoration: none;
-  box-shadow: var(--ds-edge-soft);
-  transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.15s, color 0.15s;
+  transition: color 0.12s;
 }
 .ds-home-link svg {
   flex: none;
 }
 .ds-home-link:hover {
-  border-color: color-mix(in srgb, var(--ds-accent) 50%, var(--ds-line));
   color: var(--ds-accent);
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 var(--ds-line);
 }
 .ds-home-link:active {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 var(--ds-line);
+  transform: translateY(1px);
 }
 .ds-menu {
   width: 100%;
@@ -1208,8 +1311,8 @@
   box-shadow: 0 0 0 var(--ds-line);
 }
 .ds-menu-btn.primary {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
   border-color: transparent;
   box-shadow: var(--ds-edge);
 }
@@ -1259,38 +1362,39 @@
   top: 84px; /* clears the sticky top bar */
 }
 .ds-subnav-btn {
+  position: relative;
   font: inherit;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   padding: 8px 12px;
-  border-radius: var(--ds-round);
-  border: 1px solid transparent;
+  border: 0;
+  border-bottom: 1px solid var(--ds-line);
   background: none;
-  color: var(--ds-ink-dim);
+  color: var(--ds-ink);
   cursor: pointer;
 }
 .ds-subnav-btn .sl {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .ds-subnav-btn .sh {
   font-size: 11px;
   color: var(--ds-mut);
 }
 .ds-subnav-btn:hover {
-  background: var(--ds-panel);
-  border-color: var(--ds-line);
-  color: var(--ds-ink);
+  background: var(--ds-tile);
 }
 .ds-subnav-btn.on {
-  background: var(--ds-accent-soft);
-  border-color: var(--ds-accent);
-  color: var(--ds-accent-soft-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
 }
 .ds-subnav-btn.on .sh {
-  color: color-mix(in srgb, var(--ds-accent-soft-ink) 78%, transparent);
+  color: var(--ds-panel);
 }
 /* Owns the vertical rhythm for whatever section is routed into it. A section may render
    SEVERAL top-level cards (Audio = Audio + Visual), and cards carry a hard 4px offset
@@ -1380,13 +1484,13 @@ button.ds-chip {
 }
 .ds-chip {
   font-family: var(--ds-font-mono);
-  font-size: 12px;
+  font-size: 11px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
-  border-radius: var(--ds-round-full);
-  border: 1px solid var(--ds-line);
+  padding: 4px 8px;
+  border-radius: var(--ds-round-sm);
+  border: 1px solid var(--ds-line-strong);
   color: var(--ds-ink);
   background: var(--ds-panel);
 }
@@ -1429,39 +1533,37 @@ button.ds-chip {
   font-weight: 600;
   padding: 8px 16px;
   border-radius: var(--ds-round);
-  border: 1px solid var(--ds-line);
+  border: 1px solid var(--ds-line-strong);
   background: var(--ds-panel);
   color: var(--ds-ink);
   cursor: pointer;
-  box-shadow: var(--ds-edge-soft);
-  transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.15s, background 0.15s;
+  /* flat, print-catalog pressables: the border sharpens on hover, the button seats 1px on
+     press — by transform, so nothing around it reflows */
+  transition: transform 0.06s ease, border-color 0.12s, background 0.12s;
 }
 .ds-btn:hover {
-  border-color: color-mix(in srgb, var(--ds-accent) 50%, var(--ds-line));
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 var(--ds-line);
+  border-color: var(--ds-ink);
 }
 .ds-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 var(--ds-line);
+  transform: translateY(1px);
 }
 .ds-btn.primary {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
-  border-color: transparent;
-  box-shadow: var(--ds-edge);
+  /* the ORDER button: honey fill, graphite ink, in both themes */
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
+  border-color: var(--ds-honey-deep);
 }
 .ds-btn.primary:hover {
-  background: color-mix(in srgb, var(--ds-accent) 88%, white);
-  box-shadow: 0 2px 0 var(--ds-accent-edge);
+  background: var(--ds-honey-deep);
+  border-color: var(--ds-honey-deep);
 }
 .ds-btn.primary:active {
-  box-shadow: 0 0 0 var(--ds-accent-edge);
+  transform: translateY(1px);
 }
 /* ghost is a flat text button — it has no cap, so it must not press */
 .ds-btn.ghost {
   background: none;
-  box-shadow: none;
+  border-color: transparent;
 }
 .ds-btn.ghost:hover,
 .ds-btn.ghost:active {
@@ -1516,16 +1618,23 @@ button.ds-chip {
   margin-top: var(--ds-s-5);
 }
 .ds-h1 {
-  font-size: clamp(26px, 4vw, 38px);
+  /* the catalog PAGE HEAD: condensed caps over a heavy rule, like a section title in print */
+  font-size: clamp(34px, 5vw, 52px);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: 0;
   margin: 0 0 8px;
+  padding-bottom: var(--ds-s-3);
+  border-bottom: 3px solid var(--ds-ink);
   text-wrap: balance;
 }
 .ds-h2 {
   font-size: clamp(19px, 2.4vw, 24px);
   font-weight: 800;
-  letter-spacing: -0.015em;
+  font-stretch: 87.5%;
+  letter-spacing: 0;
   margin: 0 0 8px;
 }
 /* MatchStrategy's mode/countdown line and Lobby's room-code line. Deliberately NOT
@@ -1633,36 +1742,24 @@ button.ds-chip {
   position: relative;
   overflow: hidden;
   text-align: left;
-  border: 1px solid var(--ds-line);
+  border: 1px solid var(--ds-line-strong);
   border-radius: var(--ds-round);
-  background: var(--ds-tile);
+  background: var(--ds-panel);
   color: var(--ds-ink);
-  padding: 16px 18px;
-  /* Top-aligned, NOT space-between: with the descriptions removed a tile is just a
-     kicker + title (+ an optional disabled-reason). space-between bottom-pinned the
-     title, so a tile with a reason (taller) and one without landed their titles at
-     DIFFERENT heights across a row. Stacking from the top keeps every title on the
-     same line; `min-height` matches the natural kicker+title height so a label-only
-     tile has no dead space, while a row-mate carrying a reason simply grows taller. */
+  padding: 16px;
   min-height: 78px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   cursor: pointer;
   font: inherit;
-  /* Level-1 card: flat fill, 1px stroke, hard offset block toward the bottom-right
-     (the sun sits top-left). It lifts on hover and presses INTO its shadow. */
-  box-shadow: var(--ds-block);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.15s;
+  transition: transform 0.06s ease, border-color 0.12s, background 0.12s;
 }
 .ds-tile:hover {
-  border-color: color-mix(in srgb, var(--ds-accent) 45%, var(--ds-line));
-  transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 var(--ds-line-soft);
+  border-color: var(--ds-ink);
 }
 .ds-tile:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ds-line-soft);
+  transform: translateY(1px);
 }
 .ds-tile:disabled {
   transform: none;
@@ -1678,9 +1775,11 @@ button.ds-chip {
 }
 .ds-tile .t {
   display: block;
-  font-size: 18px;
-  font-weight: 750;
-  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  margin-top: 8px;
 }
 .ds-tile .d {
   display: block;
@@ -1689,20 +1788,19 @@ button.ds-chip {
   margin-top: 3px;
 }
 .ds-tile.primary {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
-  border-color: transparent;
-  box-shadow: 4px 4px 0 var(--ds-accent-edge);
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
+  border-color: var(--ds-honey-deep);
 }
 .ds-tile.primary:hover {
-  box-shadow: 5px 5px 0 var(--ds-accent-edge);
+  background: var(--ds-honey-deep);
 }
 .ds-tile.primary:active {
-  box-shadow: 1px 1px 0 var(--ds-accent-edge);
+  transform: translateY(1px);
 }
 .ds-tile.primary .k,
 .ds-tile.primary .d {
-  color: color-mix(in srgb, var(--ds-accent-ink) 72%, transparent);
+  color: var(--ds-honey-ink);
 }
 .ds-tile:disabled .t {
   color: var(--ds-mut);
@@ -1723,13 +1821,15 @@ button.ds-chip {
   margin-top: 20px;
 }
 .ds-tileset-label {
-  font-family: var(--ds-font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: 87.5%;
   text-transform: uppercase;
-  color: var(--ds-mut);
-  margin: 0 0 10px 2px;
+  letter-spacing: 0.06em;
+  color: var(--ds-ink);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ds-ink);
 }
 /* A section label that follows a card sits ON the card without this: `.ds-main` is a plain
    block with no gap, the label has no top margin, and `--ds-block` is an offset shadow that
@@ -2007,8 +2107,8 @@ button.ds-chip {
   color: var(--ds-ink);
 }
 .ds-seg.on {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
 }
 
 /* RECESSED: a darker-than-surface well with an inner top shadow, as if carved in */
@@ -2030,7 +2130,6 @@ button.ds-chip {
   background-repeat: no-repeat;
   background-position: right 10px center;
   border: 1px solid var(--ds-line-strong); /* 1.4.11: the border IS the control (tile-on-panel is 1.16:1) */
-  box-shadow: inset 0 2px 0 var(--ds-inset);
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -2076,9 +2175,8 @@ button.ds-chip {
   gap: 8px;
   border-radius: var(--ds-round);
   border: 1px solid var(--ds-line-strong);
-  background-color: var(--ds-tile);
+  background-color: var(--ds-panel);
   color: var(--ds-ink);
-  box-shadow: inset 0 2px 0 var(--ds-inset);
   cursor: pointer;
 }
 .ds-listbox-btn svg {
@@ -2125,8 +2223,8 @@ button.ds-chip {
   outline-offset: -2px;
 }
 .ds-listbox-opt.on {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
   font-weight: 700;
 }
 
@@ -2539,8 +2637,8 @@ tr.lb-you > td {
 }
 .lb-you-tag {
   margin-left: 2px;
-  color: var(--ds-accent-ink);
-  background: var(--ds-accent);
+  color: var(--ds-panel);
+  background: var(--ds-ink);
 }
 
 /* leaderboard record config (expandable robot column) */
@@ -3349,7 +3447,7 @@ tr.lb-detail td {
 }
 .rec-fill {
   height: 100%;
-  background: var(--ds-accent);
+  background: var(--ds-ink);
   transition: width 0.1s linear;
 }
 .rec-eta {
@@ -3436,7 +3534,6 @@ tr.lb-detail td {
   border: 1px solid var(--ds-line-strong); /* 1.4.11: the border IS the control (tile-on-panel is 1.16:1) */
   border-radius: var(--ds-round);
   padding: 8px 12px;
-  box-shadow: inset 0 2px 0 var(--ds-inset);
 }
 .ds-input:focus-visible {
   outline: 2px solid var(--ds-accent);
@@ -3648,23 +3745,25 @@ tr.lb-detail td {
   gap: 12px;
 }
 .ds-sec > h2 {
-  font-family: var(--ds-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: 87.5%;
   text-transform: uppercase;
-  color: var(--ds-mut);
-  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ds-ink);
   margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ds-ink);
 }
 
 /* a lighter in-section subheading (e.g. the CR "Scoring archetype" groups) */
 .ds-subh {
-  font-family: var(--ds-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: var(--ds-t-sm);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ds-mut);
-  font-weight: 600;
   margin: 4px 0 -4px;
 }
 
@@ -3727,8 +3826,7 @@ tr.lb-detail td {
   gap: 4px;
   cursor: pointer;
   font: inherit;
-  box-shadow: var(--ds-block-sm);
-  transition: transform 0.08s ease, border-color 0.14s, background 0.14s, box-shadow 0.08s ease;
+  transition: transform 0.06s ease, border-color 0.12s, background 0.12s;
 }
 /* Label-only option toggles (those whose helper `.od` line was removed) would
    otherwise sit ~20px shorter than their descriptive siblings, leaving a visible
@@ -3749,7 +3847,8 @@ tr.lb-detail td {
    but one. Inset (not `border-left`) so the card's own 1px border stays unbroken and the
    mark cannot be mistaken for a selection state — `.on` owns that. */
 .ds-opt.real {
-  box-shadow: var(--ds-block-sm), inset 3px 0 0 color-mix(in srgb, var(--ds-accent) 55%, transparent);
+  /* a real team's robot: a honey corner tick, not a side stripe */
+  background-image: linear-gradient(135deg, var(--ds-honey) 0 8px, transparent 8px);
 }
 /* Drivetrain grid (the only `.ds-opts.four`): now label-only chips — center the
    label so the four read as an even segmented row instead of top-left labels. */
@@ -3801,30 +3900,25 @@ tr.lb-detail td {
   cursor: not-allowed;
 }
 .ds-opt:hover {
-  border-color: color-mix(in srgb, var(--ds-accent) 45%, var(--ds-line));
-  background: var(--ds-tile);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ds-line-soft);
+  border-color: var(--ds-ink);
 }
 .ds-opt:active {
-  transform: translate(1px, 1px);
-  box-shadow: 0 0 0 var(--ds-line-soft);
+  transform: translateY(1px);
 }
 /* SELECTED. These cards carry the ON/OFF toggles (Sorter, Aim assist, …), so the
    chosen state reads as a filled soft-mint chip, not a hairline tint. */
 .ds-opt.on {
-  border-color: var(--ds-accent);
-  background: var(--ds-accent-soft);
-  color: var(--ds-accent-soft-ink);
-  box-shadow: 2px 2px 0 var(--ds-accent-edge);
+  /* a chosen SPEC: filled graphite, like a checked box in a catalog's option grid */
+  border-color: var(--ds-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
 }
 .ds-opt.on:hover {
-  background: var(--ds-accent-soft);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ds-accent-edge);
+  background: var(--ds-ink-dim);
+  border-color: var(--ds-ink-dim);
 }
 .ds-opt.on:active {
-  box-shadow: 0 0 0 var(--ds-accent-edge);
+  transform: translateY(1px);
 }
 .ds-opt:disabled {
   opacity: 0.55;
@@ -3945,7 +4039,9 @@ tr.lb-detail td {
 /* the selected row re-grounds on --ds-accent-soft, so its sub-label needs that
    surface's muted ink — --ds-mut is tuned against --ds-panel (3.78:1 here) */
 .ds-opt.on .od {
-  color: var(--ds-accent-soft-mut);
+  /* whatever the chosen card is filled with (graphite, or an alliance tint), the
+     sub-label takes that fill's own ink */
+  color: inherit;
 }
 .ds-opt .om {
   font-family: var(--ds-font-mono);
@@ -3954,16 +4050,17 @@ tr.lb-detail td {
   color: var(--ds-ink-dim);
 }
 .ds-opt .oz {
-  margin-top: 3px;
+  margin-top: 4px;
   align-self: flex-start;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ds-accent);
-  background: color-mix(in srgb, var(--ds-accent) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ds-accent) 40%, var(--ds-line));
-  border-radius: var(--ds-round-full);
+  color: var(--ds-ink);
+  background: var(--ds-tile);
+  border: 1px solid var(--ds-line-strong);
+  border-radius: var(--ds-round-sm);
   padding: 2px 8px;
 }
 /* "Play a friend" format picker — a column of .ds-opt tiles in a modal. */
@@ -4028,13 +4125,11 @@ tr.lb-detail td {
   border-color: var(--ds-red);
   background: color-mix(in srgb, var(--ds-red) 12%, var(--ds-panel));
   color: var(--ds-ink);
-  box-shadow: 2px 2px 0 color-mix(in srgb, var(--ds-red) 45%, var(--ds-line-soft));
 }
 .ds-opt.blue.on {
   border-color: var(--ds-blue);
   background: color-mix(in srgb, var(--ds-blue) 12%, var(--ds-panel));
   color: var(--ds-ink);
-  box-shadow: 2px 2px 0 color-mix(in srgb, var(--ds-blue) 45%, var(--ds-line-soft));
 }
 .ds-opt .go {
   margin-left: auto;
@@ -4058,8 +4153,7 @@ tr.lb-detail td {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: var(--ds-block);
+  gap: 12px;
 }
 /* three inline `flex` overrides of the same class, written once */
 .ds-fields > .ds-field.wide {
@@ -4130,7 +4224,7 @@ input[type='range'].ds-range::-webkit-slider-thumb,
   height: 18px;
   margin-top: -6px; /* centre the puck on the 8px track */
   border-radius: 50%;
-  background: var(--ds-accent);
+  background: var(--ds-ink);
   border: 2px solid var(--ds-panel);
   box-shadow: 0 2px 0 var(--ds-accent-edge);
 }
@@ -4147,7 +4241,7 @@ input[type='range'].ds-range::-moz-range-progress,
 .ds-replay-seek::-moz-range-progress {
   height: 8px;
   border-radius: var(--ds-round-full);
-  background: var(--ds-accent);
+  background: var(--ds-ink);
 }
 input[type='range'].ds-range::-moz-range-thumb,
 .ds-bind-row input[type='range']::-moz-range-thumb,
@@ -4155,7 +4249,7 @@ input[type='range'].ds-range::-moz-range-thumb,
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--ds-accent);
+  background: var(--ds-ink);
   border: 2px solid var(--ds-panel);
 }
 input[type='range']:focus-visible {
@@ -4173,12 +4267,11 @@ input[type='range']:focus-visible {
 .ds-hero {
   display: grid;
   grid-template-columns: 220px 1fr;
-  gap: 18px;
+  gap: 16px;
   border: 1px solid var(--ds-line);
   border-radius: var(--ds-round);
-  background: linear-gradient(160deg, var(--ds-tile), var(--ds-panel));
-  padding: 18px;
-  box-shadow: var(--ds-block);
+  background: var(--ds-panel);
+  padding: 16px;
 }
 /* the team line is identity, not feedback — first thing to go when space is tight */
 /* the robot preview is a CANVAS of the real sprite, drawn on the field's own mat —
@@ -4191,10 +4284,8 @@ input[type='range']:focus-visible {
 .ds-hero-view {
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--ds-accent) 8%, transparent), transparent),
-    var(--ds-bg);
-  border: 1px solid var(--ds-line-soft);
+  background: var(--ds-tile);
+  border: 1px solid var(--ds-line);
   border-radius: var(--ds-round);
   min-height: 150px;
   padding: 12px;
@@ -4220,15 +4311,16 @@ input[type='range']:focus-visible {
   line-height: 1.2;
 }
 .ds-hero-name .cust {
-  font-family: var(--ds-font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--ds-accent-ink);
-  background: var(--ds-accent);
-  border-radius: var(--ds-round-full);
+  font-size: 11px;
+  font-weight: 800;
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-honey-ink);
+  background: var(--ds-honey);
+  border-radius: var(--ds-round-sm);
   padding: 2px 8px;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
 }
 /* The name/team pair is a two-line unit, so the space between them is set here rather
@@ -4252,11 +4344,10 @@ input[type='range']:focus-visible {
   font-size: var(--ds-t-md);
 }
 .ds-stat {
-  border: 1px solid var(--ds-line-soft);
+  border: 1px solid var(--ds-line);
   border-radius: var(--ds-round);
   background: var(--ds-panel);
-  padding: 8px 10px;
-  box-shadow: var(--ds-block-sm);
+  padding: 8px 12px;
 }
 .ds-stat .sv {
   font-family: var(--ds-font-mono);
@@ -4266,13 +4357,15 @@ input[type='range']:focus-visible {
   color: var(--ds-ink);
 }
 .ds-stat .sl {
+  /* the LABEL is a word, not a reading: condensed caps; the value above stays mono */
   display: block;
-  font-family: var(--ds-font-mono);
-  font-size: 10px;
+  font-size: var(--ds-t-xs);
+  font-weight: 700;
+  font-stretch: 87.5%;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ds-mut);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 /* ---- narrow viewports -------------------------------------------------
    The rail and the Configure sub-nav are vertical columns beside the content;
@@ -4507,17 +4600,18 @@ input[type='range']:focus-visible {
 /* the high-action button: PILL corners set it apart from the layout blocks */
 .ds-cta {
   font: inherit;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   padding: 16px;
-  border-radius: var(--ds-round-full);
-  border: 1px solid transparent;
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  border-radius: var(--ds-round);
+  border: 1px solid var(--ds-honey-deep);
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
   cursor: pointer;
-  box-shadow: var(--ds-edge);
-  transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.15s, border-color 0.15s;
+  transition: transform 0.06s ease, background 0.12s;
 }
 /* Works on an <a> as well as a <button>. An anchor is inline by default, so its
    16px padding collapses into the neighbouring lines and the pill overlaps the
@@ -4527,13 +4621,10 @@ a.ds-cta {
   text-decoration: none;
 }
 .ds-cta:hover {
-  background: color-mix(in srgb, var(--ds-accent) 88%, white);
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 var(--ds-accent-edge);
+  background: var(--ds-honey-deep);
 }
 .ds-cta:active {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 var(--ds-accent-edge);
+  transform: translateY(1px);
 }
 .ds-cta:disabled {
   opacity: 0.5;
@@ -4681,10 +4772,9 @@ button.ds-key:active {
 .ds-player {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--ds-panel);
   border: 1px solid var(--ds-line);
-  border-left: 3px solid var(--ds-line);
   border-radius: var(--ds-round);
   padding: var(--ds-s-2) var(--ds-s-3);
 }
@@ -4747,9 +4837,8 @@ button.ds-key:active {
   align-items: center;
   background: var(--ds-panel);
   border: 1px solid var(--ds-line);
-  border-left: 3px solid var(--ds-line);
   border-radius: var(--ds-round);
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 .ds-strat-card.red {
   border-left-color: var(--ds-red);
@@ -4883,7 +4972,7 @@ button.ds-key:active {
   line-height: 0;
 }
 .ds-startpos-canvas {
-  border-radius: 10px;
+  border-radius: var(--ds-round);
   background: var(--ds-bg);
   border: 1px solid var(--ds-line);
   touch-action: none; /* pointer drag, not scroll */
@@ -4904,8 +4993,8 @@ button.ds-key:active {
   gap: 10px;
 }
 .ds-startpos-status {
-  font: 600 12px/1.3 var(--ds-font-mono);
-  padding: 8px 10px;
+  font: 700 12px/1.3 var(--ds-font-ui);
+  padding: 8px 12px;
   border-radius: var(--ds-round);
   border: 1px solid var(--ds-line);
 }
@@ -4962,10 +5051,10 @@ button.ds-key:active {
 }
 .ds-startpos-inputs input {
   width: 100%;
-  padding: 6px 8px;
-  border-radius: 7px;
-  border: 1px solid var(--ds-line);
-  background: var(--ds-bg);
+  padding: 4px 8px;
+  border-radius: var(--ds-round-sm);
+  border: 1px solid var(--ds-line-strong);
+  background: var(--ds-panel);
   color: var(--ds-ink);
   font: 600 13px/1 var(--ds-font-mono);
 }
@@ -4991,27 +5080,25 @@ button.ds-key:active {
 }
 .ds-startpos-tabs {
   display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 9px;
-  background: var(--ds-bg);
-  border: 1px solid var(--ds-line);
+  gap: 4px;
   align-self: flex-start;
 }
 .ds-startpos-tab {
+  min-height: 32px;
   padding: 4px 16px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--ds-ink-dim);
-  font: 700 12px/1 inherit;
-  letter-spacing: 0.04em;
+  border: 1px solid var(--ds-line-strong);
+  border-radius: var(--ds-round-sm);
+  background: var(--ds-panel);
+  color: var(--ds-ink);
+  font: 700 12px/1 var(--ds-font-ui);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
 }
 .ds-startpos-tab.on {
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
+  background: var(--ds-ink);
+  border-color: var(--ds-ink);
+  color: var(--ds-panel);
 }
 .ds-startpos-role {
   font: 700 11px/1 inherit;
@@ -5226,7 +5313,7 @@ button.ds-key:active {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ds-accent);
+  background: var(--ds-ink);
   flex: none;
 }
 /* found: the bar stops being ambient and starts being the most important thing
@@ -5293,7 +5380,7 @@ button.ds-key:active {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--ds-accent);
+  background: var(--ds-ink);
   flex: none;
 }
 .ds-queuechip .qb-txt {

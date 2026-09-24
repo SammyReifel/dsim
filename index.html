@@ -31,7 +31,7 @@
     <title>DSIM: Online 2D FTC Driving Simulator</title>
     <meta
       name="description"
-      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive DECODE, Chain Reaction or BIOBUZZ, and play solo or ranked."
+      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive BIOBUZZ, and play solo or ranked."
     />
     <link rel="canonical" href="https://www.playdsim.com/" />
 
@@ -40,7 +40,7 @@
     <meta property="og:title" content="DSIM: Online 2D FTC Driving Simulator" />
     <meta
       property="og:description"
-      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive DECODE, Chain Reaction or BIOBUZZ, and play solo or ranked."
+      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive BIOBUZZ, and play solo or ranked."
     />
     <meta property="og:url" content="https://www.playdsim.com/" />
     <!--
@@ -66,7 +66,7 @@
     <meta name="twitter:title" content="DSIM: Online 2D FTC Driving Simulator" />
     <meta
       name="twitter:description"
-      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive DECODE, Chain Reaction or BIOBUZZ, and play solo or ranked."
+      content="An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive BIOBUZZ, and play solo or ranked."
     />
     <meta name="twitter:image" content="https://www.playdsim.com/og.png" />
     <meta
@@ -117,7 +117,7 @@
         "name": "DSIM",
         "alternateName": "DSIM: Online 2D FTC Driving Simulator",
         "url": "https://www.playdsim.com/",
-        "description": "An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive DECODE, Chain Reaction or BIOBUZZ, and play solo or ranked.",
+        "description": "An online 2D driving simulator for FIRST Tech Challenge. Build a robot, drive BIOBUZZ, and play solo or ranked.",
         "inLanguage": "en",
         "publisher": { "@type": "Organization", "name": "DSIM", "url": "https://www.playdsim.com/" }
       }
@@ -283,6 +283,20 @@
     </style>
   </head>
   <body>
+    <!-- DIRECTION CONTRACT (impeccable, seed a68083fc)
+      THESIS: DSIM's menus are a parts catalog for one game: every mode is a part you pick, every
+        bot setting a spec you tick; it refuses the neon esports launcher and the keycap toy box.
+      OWN-WORLD: cool catalog paper (#eceff1/#fff), graphite ink and plate bands, hairline rules,
+        2-3px corners, no shadows, anodized honey-gold (#f5b400) fields with graphite ink; Archivo
+        condensed caps for heads, Martian Mono only for data; the field as a line-drawn plate.
+      STORY: the driver sees the real BIOBUZZ field drawn as a catalog plate, orders Play, ticks
+        opponents/teammate/level, reads the setup code, drives; results come back as a report.
+      FIRST VIEWPORT: home = cover. Huge condensed DSIM wordmark top-left over a heavy rule, the
+        season line, sponsor, one gold order button (Play), an index of the other pages, a spec
+        table; the field plate with callouts fills the right half.
+      FORM: parts catalog, candidate 5 of 7 (degraded roll, no challengers), seed a68083fc.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <div id="root">
       <div id="seo-home">
         <p class="sh-eyebrow">FIRST Tech Challenge · 2D Driver Practice</p>
@@ -308,25 +322,17 @@
           >
         </p>
         <p class="sh-lead">An online 2D driving simulator for FIRST Tech Challenge.</p>
-        <!-- The two games, as real links. Each is its own indexable page with its
-             own title and description (see applyRouteMeta), and these are the only
-             thing pointing a crawler at them. -->
-        <nav class="sh-games" aria-label="Game">
-          <a class="on" href="/decode">DECODE</a>
-          <a href="/chain">Chain Reaction</a>
-          <a href="/biobuzz">BIOBUZZ</a>
-        </nav>
         <nav class="sh-menu" aria-label="Main">
-          <a class="sh-btn primary" href="/decode/modes"><b>Play</b><span>Pick a game mode</span></a>
-          <a class="sh-btn" href="/decode/configure/robot"
+          <a class="sh-btn primary" href="/biobuzz/modes"><b>Play</b><span>Pick a game mode</span></a>
+          <a class="sh-btn" href="/biobuzz/configure/robot"
             ><b>Configure</b><span>Robot &amp; match setup</span></a
           >
-          <a class="sh-btn" href="/decode/records"><b>Records</b><span>Leaderboard &amp; career</span></a>
-          <a class="sh-btn" href="/decode/download"><b>Download</b><span>Desktop app</span></a>
+          <a class="sh-btn" href="/biobuzz/records"><b>Records</b><span>Leaderboard &amp; career</span></a>
+          <a class="sh-btn" href="/biobuzz/download"><b>Download</b><span>Desktop app</span></a>
         </nav>
         <p class="sh-foot">
-          <a href="/decode/changelogs">Changes</a>
-          <a href="/decode/contributors">Contributors</a>
+          <a href="/biobuzz/changelogs">Changes</a>
+          <a href="/biobuzz/contributors">Contributors</a>
           <a href="https://github.com/genius0412/dsim" rel="noreferrer">GitHub</a>
           <a href="https://discord.gg/YB4tXnx7Pj" rel="noreferrer">Discord</a>
         </p>

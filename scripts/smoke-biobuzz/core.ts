@@ -196,10 +196,12 @@ export function coreChecks(check: Check): void {
   section('season channel visibility');
   const stable = visibleGameIdsOn('stable');
   const alpha = visibleGameIdsOn('alpha');
-  check('decode is visible on stable', stable.includes('decode'));
-  check('chain is visible on stable', stable.includes('chain'));
-  check('decode is visible on alpha too', alpha.includes('decode'));
-  check('chain is visible on alpha too', alpha.includes('chain'));
+  // this fork is BIOBUZZ-only: DECODE and Chain Reaction are registered (the shared sim
+  // falls back to DECODE) but visible on NO channel
+  check('biobuzz is visible on stable', stable.includes('biobuzz'));
+  check('biobuzz is visible on alpha', alpha.includes('biobuzz'));
+  check('decode is hidden on every channel', !stable.includes('decode') && !alpha.includes('decode'));
+  check('chain is hidden on every channel', !stable.includes('chain') && !alpha.includes('chain'));
   for (const s of SEASONS) {
     const on = (c: string): boolean => !s.channels || (s.channels as readonly string[]).includes(c);
     check(

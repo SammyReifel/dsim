@@ -15,7 +15,7 @@ Two overlapping primary users, both FTC (FIRST Tech Challenge) participants, gra
 
 ## Product Purpose
 
-DSIM is a 2D top-down driver-practice simulator that lets FTC teams and drivers practice driving and in-match strategy without physical access to a robot or field. It hosts more than one FTC game ("season" in-app): DECODE presented by RTX (2025–26) and Chain Reaction (2026 Unofficial-FTC CAD competition), both fully scored and ranked. Success means a driver's practice reps here transfer to real match performance — the drive feel, scoring, and penalties are meant to be trustworthy enough to train on, not just fun to click through.
+DSIM is a 2D top-down driver-practice simulator that lets FTC teams and drivers practice driving and in-match strategy without physical access to a robot or field. The app is BIOBUZZ-only (FTC 2026–27, "season" in-app): DECODE and Chain Reaction were removed from every surface in September 2026. Their code stays registered, because the shared simulation core falls back to DECODE and old worlds and replays still resolve, but no picker, URL, board or queue names them. Success means a driver's practice reps here transfer to real match performance — the drive feel, scoring, and penalties are meant to be trustworthy enough to train on, not just fun to click through.
 
 ## Positioning
 
@@ -27,7 +27,7 @@ Played in-browser (Vercel-hosted client) or via a thin Electron desktop wrapper 
 
 ## Capabilities and Constraints
 
-- Two playable games (DECODE, Chain Reaction), each with a full scored/penalized match, free drive, and solo record-attack (score-attack) mode.
+- One playable game, BIOBUZZ, with a full scored/penalized match, free drive, solo record-attack (score-attack) mode, and offline bots (Easy / Normal / Hard / Nightmare) that drive the player's own build.
 - Ranked 1v1/2v2 via Glicko-2, leaderboards and records kept per game × mode × drivetrain × season, friend challenges, and a background ranked queue that survives navigating away.
 - Accounts and match history via Neon Postgres; admin/staff roles with badges.
 - Client bundle is intentionally minimal (React + Rapier 2D only); everything else is server/auth-only — a constraint on future dependency choices, not just current state.
@@ -35,7 +35,7 @@ Played in-browser (Vercel-hosted client) or via a thin Electron desktop wrapper 
 
 ## Brand Commitments
 
-- App brand is **DSIM**; a loaded game is a **"season"** — kept distinct in UI copy (DECODE / Chain Reaction are what's currently loaded, not the product name).
+- App brand is **DSIM**; a loaded game is a **"season"** — kept distinct in UI copy (BIOBUZZ is what's currently loaded, not the product name).
 - `LEGAL_OPERATOR` / `LEGAL_JURISDICTION` (`src/legalText.ts`) are unfilled placeholders — the Terms page shows a visible warning until set, and no real payment should be taken before they're filled.
 
 ## Evidence on Hand

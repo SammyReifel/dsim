@@ -1,6 +1,62 @@
+# HANDOFF — 2026-09-24, BIOBUZZ-only + the Parts Catalog redesign
+
+**READ FIRST.** `npm run build`, `server:check`, `test:bots` (63), `test:bb` (1304), `contrast`
+(225) and `uiaudit` are all green. `npm test` was NOT run, and nothing in `src/sim/` changed.
+
+**Ask:** "remove decode and chain reaction and use the frontend design skill to overhaul the UI flow
+(other than the game part)". The owner chose these options:
+- remove them from the APP (code stays);
+- a brand-new BIOBUZZ look;
+- main loop first;
+- "do what u think" on the direction.
+
+**Removal.**
+- DECODE and CR are `channels: []` in `src/seasons.ts`, so they are visible on no channel. BIOBUZZ is
+  listed first and is the default game (`settings.ts`, the App fallback).
+- The modules stay registered, because the sim falls back to DECODE and old replays still resolve.
+- `robots.txt`, `sitemap.xml` and the `index.html` meta now name only BIOBUZZ.
+- CR-only key bindings are hidden in Controls (`CR_ONLY`).
+- The smoke check now asserts that the two games are hidden.
+- PRODUCT.md is updated.
+
+**Redesign ("The Parts Catalog").** The contract is at the top of `<body>` in `index.html`.
+DESIGN.md and `.impeccable/design.json` were rewritten from the built world.
+- **Tokens** (the `shell.css` `:root` blocks):
+  - cool paper and graphite ink;
+  - honey `--ds-honey` #f5b400 is the one committed fill; `--ds-accent` is its text-safe ink;
+  - `--ds-plate` for the graphite bands;
+  - 2–3px corners and no shadows;
+  - Archivo (width axis) for the UI and Martian Mono for data.
+- **Game part untouched:** `.game-root` pins the HUD's old accent, fonts, corners and shadows.
+  `.game-root .overlay` flips results, pause and reconnect back to the catalog set.
+- **New components:** `src/ui/catalog.css`, `FieldPlate.tsx` (the field drawn from the real config
+  geometry), the cover `HomeMenu`, `ModeSelect` part rows, and the `BotOptions` spec selector with
+  its live setup code.
+- **Shared skins edited in place:** bar, rail thumb-tabs, btn, tile, opt, seg, subnav, h1, section
+  heads, chip, panelbox, cta, stat, startpos, and the results table.
+- The logo and favicon are a honey badge.
+
+**Review (impeccable finish reviewer, 2 rounds, final disposition "fix").**
+- Resolved: Play layout, dark plate, results report and its sticky actions, the double-gold
+  results buttons, the mobile action-row overflow, the Configure heads, the flat inputs and hero,
+  the emoji and the side stripes.
+- Still open (the next pass):
+  - the Friends band on mobile (content starts about 340px down; move it into the masthead);
+  - mono used on word values (`.ds-stat .sv`, "Mecanum", "My Robot");
+  - the ragged 5+4 stat grid;
+  - "Legal setup ✓";
+  - the home plate could grow;
+  - the leftover `.ds-tile .k` mono kicker and the old blush/sage tokens.
+- Out-of-scope screens (Records, Profile, Friends, Admin, Lobby…) inherit the new tokens and fonts
+  but keep their old layouts. They are the "later pass" the owner agreed to.
+
+**Harness notes:** the screenshots are in `.impeccable/shots/` (gitignored). The Playwright scripts
+live in the session scratchpad (`pw/shots.mjs`, `pw/results.mjs`, which fast-forwards a solo match
+with `page.clock`).
+
 # HANDOFF — 2026-09-24, the difficulty ladder (BIOBUZZ)
 
-**READ FIRST.** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run.
+**(Superseded by the section above.)** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run.
 Only `src/bots/opponentBot.ts` changed.
 
 **Ask:** "make easy medium hard accordingly", now that Nightmare beats the owner.

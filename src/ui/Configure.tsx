@@ -16,7 +16,7 @@ const LABELS: Record<ConfigureSection, { label: string; hint: string }> = {
   match: { label: 'Match', hint: 'Alliance, start, autos' },
   controls: { label: 'Controls', hint: 'Keyboard & gamepad' },
   // route key stays 'audio' — /configure/audio is deep-linkable and already shipped
-  audio: { label: 'Audio and Visual', hint: 'Sounds, voice & theme' },
+  audio: { label: 'Audio & visual', hint: 'Sounds, voice & theme' },
 };
 
 /**

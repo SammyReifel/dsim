@@ -1316,8 +1316,8 @@ function Results({
         )}
         <div className="overlay-buttons">
           {(matchResult ?? practiceRun) && onWatchReplay && (
-            <button onClick={() => onWatchReplay((matchResult ?? practiceRun)!.replay)}>
-              ▶ WATCH REPLAY
+            <button className="ghost" onClick={() => onWatchReplay((matchResult ?? practiceRun)!.replay)}>
+              WATCH REPLAY
             </button>
           )}
           {canRematch && <button onClick={onRematch}>REMATCH</button>}
@@ -1572,8 +1572,8 @@ function RecordResults({
             </table>
             <div className="overlay-buttons">
               {(matchResult ?? practiceRun) && onWatchReplay && (
-                <button onClick={() => onWatchReplay((matchResult ?? practiceRun)!.replay)}>
-                  ▶ WATCH REPLAY
+                <button className="ghost" onClick={() => onWatchReplay((matchResult ?? practiceRun)!.replay)}>
+                  WATCH REPLAY
                 </button>
               )}
               {canRematch && <button onClick={onRematch}>RUN AGAIN</button>}

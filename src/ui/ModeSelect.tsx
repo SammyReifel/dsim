@@ -43,9 +43,10 @@ export function ModeSelect({
   onLan: () => void;
 }) {
   const lanOn = useLanEnabled();
+  const offline = !multiplayer ? 'Needs the game server' : null;
   return (
     <>
-      <h1 className="ds-h1">Pick a mode</h1>
+      <h1 className="ds-h1">Play</h1>
 
       {activeGame && (
         <div className="ds-rejoin" role="alert">
@@ -56,114 +57,88 @@ export function ModeSelect({
         </div>
       )}
 
-      {/* Offline, always available — the safe default (Solo Practice is primary) */}
-      <section className="ds-tileset">
-        <p className="ds-tileset-label">Practice · offline</p>
-        <div className="ds-tiles">
-          <button className="ds-tile primary" onClick={onSoloMatch}>
-            <span className="k">Solo</span>
-            <span>
-              <span className="t">Solo Practice</span>
-            </span>
-          </button>
-
-          <button className="ds-tile" onClick={onFreeDrive}>
-            <span className="k">Practice</span>
-            <span>
-              <span className="t">Free Drive</span>
-            </span>
-          </button>
+      <section className="cat-practice" aria-labelledby="play-practice">
+        <div className="cat-parts">
+          <h2 className="cat-h2" id="play-practice">
+            Practice offline
+          </h2>
+          <PartRow
+            primary
+            name="Solo Practice"
+            desc="A full scored match against the bots you pick."
+            onClick={onSoloMatch}
+          />
+          <PartRow name="Free Drive" desc="No clock and no score. Your bots come along." onClick={onFreeDrive} />
         </div>
-        <p className="ds-tileset-label ds-botpick-label">Bots</p>
-        <BotOptions settings={settings} onChange={onSettings} />
-      </section>
-
-      {/* Online — ranked + score-attack records (need the game server / sign-in) */}
-      <section className="ds-tileset">
-        <p className="ds-tileset-label">Compete · online</p>
-        <div className="ds-tiles">
-          <button className="ds-tile" onClick={onRanked} disabled={!multiplayer || !signedIn}>
-            <span className="k">Ranked</span>
-            <span>
-              <span className="t">
-                Find Match
-                <QueueCounts className="tile" />
-              </span>
-              {/* ⚠️ CONDITIONAL, and it must stay that way. A previous pass rendered
-                  this line ALWAYS, with a non-breaking space when there was nothing to
-                  say, to stop the tile growing when `signedIn` resolves asynchronously.
-                  That trade is backwards: `.ds-tiles` is a grid, so the reserved line
-                  made Find Match, Solo Record AND Duo Record permanently a line taller
-                  for everyone, to spare signed-in users one shrink at first paint —
-                  and most visitors are signed out, where the line is there from the
-                  start and never moves at all. If the shift is worth fixing, thread an
-                  `authReady` flag down from AccountSync; do not reserve the line. */}
-              {(!multiplayer || !signedIn) && (
-                <span className="d">
-                  {!multiplayer ? 'Needs the game server' : 'Sign in to play ranked'}
-                </span>
-              )}
-            </span>
-          </button>
-
-          <button className="ds-tile" onClick={onRecordRun} disabled={!multiplayer}>
-            <span className="k">Records</span>
-            <span>
-              <span className="t">Solo Record</span>
-              {!multiplayer && <span className="d">Needs the game server</span>}
-            </span>
-          </button>
-
-          <button className="ds-tile" onClick={onDuoRecord} disabled={!multiplayer}>
-            <span className="k">Records</span>
-            <span>
-              <span className="t">Duo Record</span>
-              {!multiplayer && <span className="d">Needs the game server</span>}
-            </span>
-          </button>
+        <div className="cat-configbox">
+          <h2 className="cat-h2">Bots</h2>
+          <BotOptions settings={settings} onChange={onSettings} />
         </div>
       </section>
 
-      {/* Custom room */}
-      <section className="ds-tileset">
-        <p className="ds-tileset-label">Custom · online</p>
-        <div className="ds-tiles">
-          <button className="ds-tile" onClick={onCustomRoom} disabled={!multiplayer}>
-            <span className="k">Custom</span>
-            <span>
-              <span className="t">Custom Room</span>
-              {!multiplayer && <span className="d">Needs the game server</span>}
-            </span>
-          </button>
-          <button className="ds-tile" onClick={onWatch} disabled={!multiplayer}>
-            <span className="k">Live</span>
-            <span>
-              <span className="t">Watch Live</span>
-              {!multiplayer && <span className="d">Needs the game server</span>}
-            </span>
-          </button>
-        </div>
+      <section className="cat-parts" aria-labelledby="play-compete">
+        <h2 className="cat-h2" id="play-compete">
+          Compete online
+        </h2>
+        <PartRow
+          name="Find Match"
+          extra={<QueueCounts className="tile" />}
+          desc="Ranked 1v1 or 2v2 against real drivers."
+          blocked={offline ?? (!signedIn ? 'Sign in to play ranked' : null)}
+          onClick={onRanked}
+        />
+        <PartRow name="Solo Record" desc="Score attack. Your best run goes on the board." blocked={offline} onClick={onRecordRun} />
+        <PartRow name="Duo Record" desc="Score attack with a partner." blocked={offline} onClick={onDuoRecord} />
       </section>
 
-      {/* LAN — LAST on the page (owner, 2026-09-13). Never disabled on `multiplayer`: not
-          needing our servers is the point of it.
-
-          Hidden entirely where `LAN_ENABLED` is off, rather than shown disabled: a greyed tile
-          advertises a mode this build will not play, and the reason it is off is that the
-          feature is being held back, not that the player is missing a prerequisite. */}
-      {lanOn && (
-        <section className="ds-tileset">
-          <p className="ds-tileset-label">LAN · same network</p>
-          <div className="ds-tiles">
-            <button className="ds-tile" onClick={onLan}>
-              <span className="k">LAN</span>
-              <span>
-                <span className="t">Host or Join</span>
-              </span>
-            </button>
-          </div>
-        </section>
-      )}
+      <section className="cat-parts" aria-labelledby="play-custom">
+        <h2 className="cat-h2" id="play-custom">
+          Rooms
+        </h2>
+        <PartRow name="Custom Room" desc="Make a room and share the code with friends." blocked={offline} onClick={onCustomRoom} />
+        <PartRow name="Watch Live" desc="Spectate ranked matches in progress." blocked={offline} onClick={onWatch} />
+        {/* Hidden entirely where `LAN_ENABLED` is off, rather than shown disabled: a greyed row
+            advertises a mode this build will not play. */}
+        {lanOn && <PartRow name="LAN" desc="Host or join a game on the same network." onClick={onLan} />}
+      </section>
     </>
+  );
+}
+
+/**
+ * One mode as a catalog PART ROW: its name set condensed, one line on what it is, and the
+ * action at the end of the row. A mode that cannot be played here says why in place of the
+ * arrow — a greyed row with no reason reads as broken.
+ */
+function PartRow({
+  name,
+  desc,
+  onClick,
+  primary,
+  blocked = null,
+  extra,
+}: {
+  name: string;
+  desc: string;
+  onClick: () => void;
+  primary?: boolean;
+  blocked?: string | null;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <button className={`cat-part${primary ? ' primary' : ''}`} onClick={onClick} disabled={!!blocked}>
+      <span className="cp-name">
+        {name}
+        {extra}
+      </span>
+      <span className="cp-desc">{desc}</span>
+      {blocked ? (
+        <span className="cp-why">{blocked}</span>
+      ) : (
+        <svg className="cp-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 12h15M13 6l6 6-6 6" />
+        </svg>
+      )}
+    </button>
   );
 }

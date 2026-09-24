@@ -238,6 +238,5 @@ export function bbPresetLines(preset: RobotSpec): { meta: string; zone?: string 
       : `${BB_MODE_LABELS[launcher.kind]} · ${bbLauncherMountLabel(launcher)}`,
   ];
   if (lift) zoneParts.push(`${bbLiftKindLabel(lift.kind)} · ${BB_MOUNT_POS_LABELS[lift.mount]}`);
-  // 🎯 marks the shooting mechanism, which every build now has.
-  return { meta, zone: `🎯 ${zoneParts.join(' · ')}` };
+  return { meta, zone: zoneParts.join(' · ') };
 }
