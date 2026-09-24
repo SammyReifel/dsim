@@ -58,6 +58,9 @@ import {
 import { bbFlowerInReach, bbMouths, bbPlacePointLocal } from '../games/biobuzz/robot';
 import { bbIntakeAccepts, bbLauncherOf } from '../games/biobuzz/mechs';
 import { chainIntakeMouths } from '../games/chain/state';
+import { bbFootprintGap } from '../games/biobuzz/penalties';
+import { BB_TIP_RELEASE_S } from '../games/biobuzz/hive';
+import { driveIntent } from '../sim/physics';
 import type { RobotSpec } from '../types';
 import { flowerFits, flowerScore } from '../games/biobuzz/flower';
 import type { BbElementKind } from '../games/biobuzz/flower';
@@ -135,8 +138,16 @@ export interface BotKnobs {
   swingGrab: number;
   /** seconds with nothing leaving the hopper before a shooter moves spot */
   shootStall: number;
+  /** fire at the RISING cell this many seconds before the swing passes level (<0: wait for the swing to end) */
+  preFire: number;
+  /** the same lead for a DUMPER, whose lob spends longer in the air */
+  preFireDump: number;
   /** end AUTO parked in the LOADING ZONE (+5), clear of the wall (LEAVE stays) */
   autoPark: boolean;
+  /** top up during a HIVE swing only with pickups that still get us back in time */
+  swingPlan: boolean;
+  /** fire as soon as the whole TEAM's load tips the HIVE, not each bot's own */
+  teamTip: boolean;
   /** a PAIR splits the field: slot 0 works near our HIVE, slot 1 fetches from far away */
   roleSplit: boolean;
   /** overrides for the level's own settings (undefined = the level decides) */
@@ -154,7 +165,11 @@ export const DEFAULT_KNOBS: BotKnobs = {
   pullStack: 6,
   swingGrab: 30,
   shootStall: 1.5,
+  preFire: 0.4,
+  preFireDump: 0.9,
   autoPark: false,
+  swingPlan: true,
+  teamTip: true,
   roleSplit: false,
 };
 
@@ -321,6 +336,8 @@ export class OpponentBot {
   private others: RobotState[] = [];
   /** places this bot must not drive into, as circles `drive` treats like robots */
   private keepOut: { pos: Vec2; r: number }[] = [];
+  /** BIOBUZZ AUTO: the sign of x that is our half (G402), or 0 when the line is open */
+  private autoSide = 0;
   /** set by a plan that is DELIBERATELY pressing into something (a gate, a FLOWER foot), so
    * `unstick` does not read the stall as being wedged */
   private pressing = false;
@@ -395,6 +412,7 @@ export class OpponentBot {
     }
     this.others = world.robots.filter((x) => x.id !== r.id);
     this.keepOut = keepOutZones(world, r.alliance);
+    this.autoSide = this.game === 'biobuzz' && phase === 'auto' ? ownSide(world, r.alliance) : 0;
     this.team.update(world, playerId);
 
     const m = this.mem;
@@ -402,7 +420,7 @@ export class OpponentBot {
       m.plan = this.think(world, r, playerId);
       m.planTick = world.tick;
     }
-    const out = this.hands(this.unstick(world, r, m.plan));
+    const out = this.noPin(r, this.hands(this.unstick(world, r, m.plan)));
     // a re-used plan must not press a button twice: presses belong to the tick that planned them
     if (m.planTick !== world.tick) {
       out.bbPlace = false;
@@ -411,6 +429,45 @@ export class OpponentBot {
     }
     m.sent = out;
     return out;
+  }
+
+  /**
+   * THE LAST WORD ON CONTACT (BIOBUZZ): a robot touching an opponent never DRIVES toward it.
+   * G421 reads the pinner's commanded intent (`driveIntent`, the same function asked here), so
+   * a tank creeping onto its shooting spot with an opponent against its bumper was billed a
+   * MAJOR every three seconds by nothing worse than its own approach. The swerve in `drive`
+   * cannot catch that case: a tank goes where its HEADING points, not where the plan asked.
+   */
+  private noPin(r: RobotState, cmd: RobotCommand): RobotCommand {
+    if (this.game !== 'biobuzz') return cmd;
+    for (const o of this.others) {
+      if (o.alliance === r.alliance || bbFootprintGap(r, o) > 3) continue;
+      const ex = o.pos.x - r.pos.x;
+      const ey = o.pos.y - r.pos.y;
+      const el = Math.hypot(ex, ey) || 1;
+      const I = driveIntent(r, cmd);
+      const mag = Math.hypot(I.x, I.y);
+      const along = (I.x * ex + I.y * ey) / el;
+      if (mag < 0.05 || along < 0.2 * mag) continue;
+      if (isTank(r)) {
+        // no strafe to slide off with: stop driving, keep turning
+        const w = ((cmd.rightDrive ?? 0) - (cmd.leftDrive ?? 0)) / 2;
+        cmd.leftDrive = -w;
+        cmd.rightDrive = w;
+        continue;
+      }
+      const f = { x: I.x - (along * ex) / el, y: I.y - (along * ey) / el };
+      if (r.fieldCentric) {
+        const st = rot(f, viewAngleOf(r.alliance));
+        cmd.driveX = st.x;
+        cmd.driveY = st.y;
+      } else {
+        const local = rot(f, -r.heading);
+        cmd.driveX = -local.y;
+        cmd.driveY = local.x;
+      }
+    }
+    return cmd;
   }
 
   /**
@@ -701,8 +758,18 @@ export class OpponentBot {
     const held = pollen + nectar;
     // after the cue a Box Tube build keeps its NECTAR for the FLOWERS; otherwise it is ammunition
     const shootable = pollen + (caps.nectarShot && !flowerTime ? nectar : 0);
-    const tipping = !hive || hive.tipping > 0;
-    const zone = hive ? bbZone(a, hive.up, caps) : null;
+    const K = this.knobs;
+    // THE RISING CELL TAKES SHOTS BEFORE THE SWING ENDS: once the bar passes level
+    // (`released`) the tray coming up is the one that catches (`hiveTakingSide`), so a loaded
+    // bot fires at it then — a little early, even, for the time a shot spends in the air —
+    // rather than standing through the whole 4-s swing
+    const lead = caps.turreted ? K.preFire : K.preFireDump;
+    const early = !!hive && hive.tipping > 0 && lead >= 0 && (hive.released || hive.tipping - BB_TIP_RELEASE_S < lead);
+    const upSide = hive ? (early ? (hive.up === 'south' ? 'north' : 'south') : hive.up) : 'north';
+    // what the up cell holds: the rising tray is empty until it has caught something
+    const contents = hive ? (early && !hive.released ? [] : hive.contents) : [];
+    const tipping = !hive || (hive.tipping > 0 && !early);
+    const zone = hive ? bbZone(a, upSide, caps) : null;
     this.status = '';
 
     // THE HUMAN PLAYER: one NECTAR per TIP, the whole stock from the 1:00 cue — entered as soon
@@ -730,7 +797,7 @@ export class OpponentBot {
         if (f !== null) return finish(this.bbPlace(world, r, f, 'nectar', pollen));
       }
       // POLLEN into a FLOWER we own only when the HIVE can no longer use it: late, and not a TIP
-      const tips = hive ? bbWouldTip(world, hive.contents, pollen, caps.nectarShot ? nectar : 0) : false;
+      const tips = hive ? bbWouldTip(world, contents, pollen, caps.nectarShot ? nectar : 0) : false;
       if (pollen > 0 && !tips && left < 25) {
         const owned = this.bestFlower(world, r, 'pollen');
         if (owned !== null) return finish(this.bbPlace(world, r, owned, 'pollen', pollen));
@@ -750,12 +817,15 @@ export class OpponentBot {
     }
 
     // ── SHOOT ──
-    const tipNow = hive ? bbWouldTip(world, hive.contents, pollen, caps.nectarShot ? nectar : 0) : false;
+    const tipNow = hive ? bbWouldTip(world, contents, pollen, caps.nectarShot ? nectar : 0) : false;
     const load = caps.turreted ? caps.cap : Math.min(caps.cap, this.tune.load + 1);
-    const K = this.knobs;
+    // THE TEAM'S LOAD: if what the whole alliance is carrying already tips the HIVE, every bot
+    // that is carrying goes and fires now, rather than each topping up its own hopper first —
+    // the HIVE, not the collecting, is what a match is rationed by (one TIP, then a 4-s swing)
+    const teamTips = K.teamTip && caps.turreted && hive && this.team.bots.length > 1 && bbTeamWouldTip(world, contents, this.team, caps);
     const goShoot =
       shootable > 0 && !tipping && !!zone &&
-      (shootable >= load || !room || (!target && pull === null) || tipNow);
+      (shootable >= load || !room || (!target && pull === null) || tipNow || !!teamTips);
     if (goShoot && zone) {
       m.target = null;
       this.status = 'shoot';
@@ -809,7 +879,19 @@ export class OpponentBot {
 
     // THE HIVE IS SWINGING and we are loaded: the other cell is about to be the up one, so be
     // there when it lands rather than waiting where the old one was
-    const nearTarget = target && Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) < K.swingGrab;
+    // TOP UP DURING THE SWING — but only with a pickup we can make AND still be at the new up
+    // side when the swing lands: arriving loaded as it settles is what makes the next TIP
+    // instant. (`tipping` is the seconds left in the swing.)
+    let nearTarget: boolean;
+    if (K.swingPlan && caps.turreted && hive && hive.tipping > 0 && target && room) {
+      const v = 45 * this.tune.speed;
+      const next = bbZone(a, hive.up === 'south' ? 'north' : 'south', caps);
+      const via = next.spot(target.pos, this.slot);
+      const eta = (Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) + Math.hypot(via.x - target.pos.x, via.y - target.pos.y)) / v;
+      nearTarget = eta < hive.tipping + 0.6;
+    } else {
+      nearTarget = !!target && Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) < K.swingGrab;
+    }
     if (this.tune.sharp && hive && hive.tipping > 0 && shootable >= Math.min(2, caps.cap) && !nearTarget && pull === null) {
       this.status = 'reposition';
       this.holding = true;
@@ -1303,6 +1385,13 @@ export class OpponentBot {
   private drive(r: RobotState, to: Vec2, face: number, arrive: number, creep = 0.3): RobotCommand {
     const cmd = zeroCmd();
     const vmax = this.tune.speed;
+    // THE AUTO LINE (BIOBUZZ G402): a robot fully across the centre line and touching an
+    // opponent is a MAJOR. The centre may lean over only by less than the chassis' shorter
+    // half-side, so some corner always stays home — an escape toward the field centre, a zone
+    // spot or a ball on the line are all clamped here rather than at every caller.
+    const side = this.autoSide;
+    const lim = side ? -Math.max(0, Math.min(r.spec.length, r.spec.width) / 2 - 5) : 0;
+    if (side && to.x * side < lim) to = { x: lim * side, y: to.y };
     // speed comes from the distance to the real target; the DIRECTION may be a detour
     const d = Math.hypot(to.x - r.pos.x, to.y - r.pos.y);
     const via = this.game === 'biobuzz' ? bbRoute(r.pos, to) : to;
@@ -1368,6 +1457,13 @@ export class OpponentBot {
       fy += side * ux * toward * 0.8;
     }
 
+    // ...and the line is applied LAST, after the robot-avoidance swerve, which is what used to
+    // carry a bot sideways over it while it steered round its own partner
+    if (side) {
+      const u = r.pos.x * side;
+      if (u < lim + 10 && fx * side < 0) fx *= clamp((u - lim) / 10, 0, 1);
+      if (u < lim) fx += side * vmax * Math.min(1, (lim - u) / 4);
+    }
     const tank = r.spec.drivetrain === 'tank' || (r.spec.drivetrain === 'butterfly' && r.butterflyTank);
     if (tank) {
       // NO STRAFE: turn onto the line of travel and drive along it — FORWARDS or BACKWARDS,
@@ -1671,6 +1767,22 @@ function kindLookup(world: World): (id: number) => BbElementKind {
     const c = byId.get(id)?.color;
     return c === 'red' || c === 'blue' ? c : 'pollen';
   };
+}
+
+/** would everything the whole TEAM is carrying, fired in, tip the up cell? */
+function bbTeamWouldTip(world: World, contents: readonly number[], team: BotTeam, caps: BbCaps): boolean {
+  let pollen = 0;
+  let nectar = 0;
+  for (const b of team.bots) {
+    const r = world.robots.find((x) => x.id === b.robotId);
+    if (!r) continue;
+    for (const c of r.hopper) {
+      if (c === 'red' || c === 'blue') {
+        if (caps.nectarShot && c === r.alliance) nectar++;
+      } else pollen++;
+    }
+  }
+  return pollen + nectar > 0 && bbWouldTip(world, contents, pollen, nectar);
 }
 
 /** POLLEN needed to TIP, indexed by NECTAR in the cell (the measured table, reference §4.1) */
