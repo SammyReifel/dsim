@@ -1,6 +1,36 @@
+# HANDOFF — 2026-09-24, latest (Nightmare: no defence, parking, bar scraping)
+
+**READ FIRST.** `npm run build` and `npm run test:bots` (63 checks) are green. `npm test` was NOT
+run. Only `src/bots/`, `src/ui/BotOptions.tsx` (one line of copy) and `scripts/botsmoke.ts` changed.
+
+**Owner report:** beat Nightmare 536–491 with a single-turret pollen-only build. The gap was 2
+TIPS, the auto park, and one Nightmare bot not parked at the buzzer.
+
+**Done** (measured in the 2v2 Nightmare mirror, N=40, against the previously merged brain: **+18.9 ±8.4
+a match, +24 on Sniper**):
+- **Nightmare never defends** (`defendLead: Infinity`). Never defending measured +16.2 ±7.1: the
+  defender cost more than it denied. The menu copy was updated, and smoke pins it (`decode nightmare
+  pair: never defends, even ahead`). Hard still defends.
+- **Parking.** PARK only needs a corner in the loading zone. The two spots were 8 in apart for a
+  17-in chassis, so the second bot sat outside at the buzzer. The spots are now 3 in inside the
+  tape and 18 in apart (`parkSpot`), and assigned by the shorter total drive (`parkSlot`).
+  Clutch departure has more margin (tanks at 30 in/s). Result: 10 of 12 parked, vs about half.
+- **Frame-bar scraping.** A turret's shooting spot kept the bot's own x, so from beside a bar it
+  drove straight down the bar's flank at 4 in/s for about 2 s. Fixed with `BAR_CLEAR`: the zone
+  spot is kept clear, and `bbRoute` steps out before a run past a bar's end.
+- **Flower feet.** A pollen tucked against the wall beside a flower foot is unreachable by a
+  chassis-wide sweeper (`bbTuckedByFoot`). Bots drove into the foot at 0 in/s and retried each
+  time the blacklist expired.
+- **Auto park re-tested** with the new spots: still −11.6, so it stays OFF.
+
+**Where the time goes now** (`cyc.mts` in the scratchpad): tips average one every 6.5 s against
+a 4-s floor. At the moment the hive releases its load, the team carries only about 3 of the 8
+pollen it needs, so COLLECTION after a spill is the bottleneck. The next idea: pre-position both
+bots at the predicted spill point before release, and split the clump.
+
 # HANDOFF — 2026-09-24, later (BIOBUZZ bots: pre-fire, no free fouls)
 
-**READ FIRST.** `npm run build` and `npm run test:bots` are green. `npm test` was NOT run. Nothing
+**(Superseded by the section above.)** `npm run build` and `npm run test:bots` are green. `npm test` was NOT run. Nothing
 outside `src/bots/` changed. All work is in `src/bots/opponentBot.ts`.
 
 **Done:**

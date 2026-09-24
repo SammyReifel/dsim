@@ -112,7 +112,7 @@ const TUNE: Record<BotLevel, Tune> = {
     starve: false, harass: false, clutch: false, scoreAware: false },
   hard: { speed: 0.92, load: 3, slew: 0.22, replan: 2, fullGame: true, sharp: true, coordinate: true, defendLead: -Infinity,
     starve: false, harass: false, clutch: true, scoreAware: false },
-  nightmare: { speed: 1, load: 3, slew: 1, replan: 1, fullGame: true, sharp: true, coordinate: true, defendLead: 15,
+  nightmare: { speed: 1, load: 3, slew: 1, replan: 1, fullGame: true, sharp: true, coordinate: true, defendLead: Infinity,
     starve: false, harass: false, clutch: true, scoreAware: true },
 };
 
@@ -259,9 +259,10 @@ const zeroCmd = (): RobotCommand => ({
  * DEFENCE IS A RESPONSE, NOT A POSTURE. A bot drops back only while the player is CARRYING
  * something (`threat`): the nearer bot of a pair takes it and the other keeps scoring; a lone
  * bot defends only when the player is also closing on their goal, because a lone defender
- * scores nothing. NIGHTMARE adds the scoreboard (`defendLead`): behind or level, every bot
- * scores, and only a lead buys a defender — so it is always playing to win, never just to
- * annoy. Swaps hold `ROLE_HOLD_S` so the two do not flap.
+ * scores nothing. `defendLead` is the lead that buys a defender. NIGHTMARE never pays it:
+ * measured head to head, a Nightmare pair that dropped a bot back once 15 ahead lost 16 points
+ * a match to one that kept both scoring, so it is always playing to win, never to annoy.
+ * Swaps hold `ROLE_HOLD_S` so the two do not flap.
  */
 export class BotTeam {
   readonly bots: OpponentBot[] = [];
@@ -569,12 +570,12 @@ export class OpponentBot {
 
     // ENDGAME: leave in time to arrive, not at a fixed second
     if (phase === 'teleop') {
-      const park = parkSpot(game, r, this.slot);
+      const park = parkSpot(game, r, this.parkSlot(world, r));
       const d = Math.hypot(park.x - r.pos.x, park.y - r.pos.y);
       const left = world.match.phaseTimeLeft;
       // a CLUTCH driver leaves at the last moment, and not at all while a TIP can still start
       const leave = this.tune.clutch
-        ? clamp(d / (40 * this.tune.speed) + 1.5, 2.5, 10)
+        ? clamp(d / ((isTank(r) ? 30 : 38) * this.tune.speed) + 2, 3, 10)
         : clamp(d / (28 * this.tune.speed) + 4, 6, 16);
       const clutch = this.tune.clutch && game === 'biobuzz' && left > 1 && this.bbClutch(world, r, left);
       if (left <= leave && !clutch) {
@@ -594,7 +595,7 @@ export class OpponentBot {
     // of AUTO — and clear of the wall, so LEAVE (3) still counts. Leave for it at the last
     // moment a sharp driver would.
     if (phase === 'auto' && game === 'biobuzz' && this.tune.sharp && this.knobs.autoPark) {
-      const park = parkSpot(game, r, this.slot);
+      const park = parkSpot(game, r, this.parkSlot(world, r));
       const d = Math.hypot(park.x - r.pos.x, park.y - r.pos.y);
       if (world.match.phaseTimeLeft <= d / (40 * this.tune.speed) + 1.2) {
         this.mem.target = null;
@@ -612,6 +613,22 @@ export class OpponentBot {
     if (game === 'biobuzz') return this.bbPlay(world, r);
     if (game === 'chain') return this.chainPlay(world, r);
     return this.decodePlay(world, r);
+  }
+
+  /** which PARK spot is ours: the pair of assignments with the shorter total drive (BIOBUZZ) */
+  private parkSlot(world: World, r: RobotState): number {
+    if (this.game !== 'biobuzz') return this.slot;
+    const mate = this.team.bots.find((b) => b !== this);
+    const o = mate && world.robots.find((x) => x.id === mate.robotId);
+    if (!o) return 0;
+    const d = (q: RobotState, k: number): number => {
+      const p = parkSpot(this.game, q, k);
+      return Math.hypot(p.x - q.pos.x, p.y - q.pos.y);
+    };
+    const keep = d(r, 0) + d(o, 1);
+    const swap = d(r, 1) + d(o, 0);
+    // a tie goes by id, so both bots settle it the same way
+    return keep < swap || (keep === swap && r.id < o.id) ? 0 : 1;
   }
 
   /** our alliance's total minus the best opposing alliance's */
@@ -1261,6 +1278,7 @@ export class OpponentBot {
       // own half in AUTO (G402 / G06)
       if (auto && b.pos.x * side < -2) continue;
       if (Math.abs(b.pos.x) > C.FIELD_HALF - wall || Math.abs(b.pos.y) > C.FIELD_HALF - wall) continue;
+      if (this.game === 'biobuzz' && bbTuckedByFoot(b.pos, r)) continue;
       if (this.keepOut.some((z) => Math.hypot(b.pos.x - z.pos.x, b.pos.y - z.pos.y) < z.r + halfDiag(r))) continue;
       // the OPPONENT'S LOADING ZONE is where their human player feeds them: going in there
       // while one of them is nearby is contact in a protected zone (G426) waiting to happen
@@ -1625,7 +1643,12 @@ function bbZone(a: Alliance, up: 'north' | 'south', caps: BbCaps): BbZone {
           return { x: clamp(alt.x, -lim, lim), y: clamp(alt.y, -lim, lim) };
         }
         let y = s * Math.max(s * p.y, 28 + slot * 6);
-        const x = clamp(p.x, -lim, lim);
+        let x = clamp(p.x, -lim, lim);
+        // NOT BESIDE A FRAME BAR: a spot a chassis-width from one is reached by scraping along
+        // it (measured: 2 s at 4 in/s, full stick, on every trip round that side of the hive)
+        for (const bx of [-BAR_X, BAR_X]) {
+          if (Math.abs(x - bx) < BAR_CLEAR && Math.abs(y) < BB_FRAME_Y + BAR_KEEP) x = bx + (x < bx ? -BAR_CLEAR : BAR_CLEAR);
+        }
         if (under({ x, y })) y = s * 38;
         return { x, y: clamp(y, -lim, lim) };
       },
@@ -1720,7 +1743,13 @@ function goalOf(world: World, a: Alliance): Vec2 {
 /** where each game's endgame points are: DECODE BASE, BIOBUZZ LOADING ZONE, CR Ring Stand */
 function parkSpot(game: string, r: RobotState, slot: number): Vec2 {
   const a = r.alliance;
-  if (game === 'biobuzz') return a === 'red' ? { x: -60, y: 36 - slot * 8 } : { x: 60, y: -36 + slot * 8 };
+  if (game === 'biobuzz') {
+    // PARK is "at least partially in the LOADING ZONE", so a corner over the tape is enough:
+    // stop just inside it, and far enough apart that two chassis never block each other (the
+    // old spots were 8 in apart for a 17-in robot, and the second bot sat outside at the buzzer)
+    const sx = a === 'red' ? -1 : 1;
+    return { x: sx * (61 + 3 - Math.min(r.spec.length, r.spec.width) / 2), y: sx * -(slot === 0 ? 44 : 28) };
+  }
   if (game === 'chain') {
     // ALONGSIDE a corner Ring Stand assembly on our side, square to the wall, as close as the
     // chassis allows: "ascended" is slow AND within CHAIN_ASCEND_R of the corner block, and
@@ -1807,6 +1836,9 @@ function bbWouldTip(world: World, contents: readonly number[], pollen: number, n
  * the nearest clear corner — a one-step visibility graph, which is all two thin bars need.
  */
 const BAR_KEEP = 11;
+/** a frame bar's centreline, and how far off it a chassis centre must be not to touch it */
+const BAR_X = (BB_FRAME_BAR_IN + BB_FRAME_BAR_OUT) / 2;
+const BAR_CLEAR = 12.5;
 const BAR_BOXES = [-1, 1].map((sx) => {
   const a = sx * (BB_FRAME_BAR_IN - BAR_KEEP);
   const b = sx * (BB_FRAME_BAR_OUT + BAR_KEEP);
@@ -1875,6 +1907,17 @@ function bbRoundBar(p: Vec2, to: Vec2): Vec2 | null {
 }
 
 function bbRoute(p: Vec2, to: Vec2): Vec2 {
+  // ALONG A BAR, not across it: a straight run past a bar's END with the chassis within a
+  // half-width of it drags the whole flank down the bar. Step out sideways first, still making
+  // progress along y. (Crossing the bar line is `bbRoundBar`'s; a target beside the bar, not
+  // past its end, is a pickup and is let through.)
+  for (const bx of [-BAR_X, BAR_X]) {
+    const sp = Math.sign(p.x - bx) || 1;
+    if (Math.sign(to.x - bx) !== sp || Math.abs(p.x - bx) >= BAR_CLEAR - 1) continue;
+    const past = Math.max(Math.abs(p.y), Math.abs(to.y)) > BB_FRAME_Y + 3;
+    const spans = Math.min(p.y, to.y) < BB_FRAME_Y && Math.max(p.y, to.y) > -BB_FRAME_Y;
+    if (past && spans && Math.abs(to.y - p.y) > 6) return { x: bx + sp * BAR_CLEAR, y: p.y + Math.sign(to.y - p.y) * 6 };
+  }
   for (const b of BAR_BOXES) {
     if (inBox(to, b)) {
       const via = bbRoundBar(p, to);
@@ -1913,6 +1956,37 @@ function bbRoute(p: Vec2, to: Vec2): Vec2 {
     return best ?? to;
   }
   return to;
+}
+
+/** the four FLOWER feet as field rectangles — built exactly as `colliders.ts` builds them */
+const FOOT_BOXES: (Box & { nx: number; ny: number })[] = BB_FLOWERS.map((f) => {
+  const n = f.wall === 'left' ? { x: 1, y: 0 } : f.wall === 'right' ? { x: -1, y: 0 } : f.wall === 'rear' ? { x: 0, y: -1 } : { x: 0, y: 1 };
+  const wx = f.x - n.x * BB_FLOWER_D;
+  const wy = f.y - n.y * BB_FLOWER_D;
+  const cx = wx + (n.x * BB_FLOWER_FOOT.deep) / 2;
+  const cy = wy + (n.y * BB_FLOWER_FOOT.deep) / 2;
+  const hx = n.x === 0 ? BB_FLOWER_FOOT.along / 2 : BB_FLOWER_FOOT.deep / 2;
+  const hy = n.y === 0 ? BB_FLOWER_FOOT.along / 2 : BB_FLOWER_FOOT.deep / 2;
+  return { x0: cx - hx, x1: cx + hx, y0: cy - hy, y1: cy + hy, nx: n.x, ny: n.y };
+});
+
+/**
+ * An element tucked against the wall BESIDE a FLOWER foot, closer to it than half a chassis:
+ * a sweeper square to the wall cannot centre on it without its flank meeting the foot, so the
+ * bot drives into the foot at full stick and 0 in/s (measured: the hottest grind spots on the
+ * field were all four feet), gives up, and comes back when the blacklist expires.
+ */
+function bbTuckedByFoot(p: Vec2, r: RobotState): boolean {
+  const half = Math.min(r.spec.length, r.spec.width) / 2 - 0.5;
+  for (const f of FOOT_BOXES) {
+    // near the wall the foot stands on (within a pollen or two of it)
+    const wallDist = f.nx !== 0 ? Math.abs(p.x - (f.nx > 0 ? f.x0 : f.x1)) : Math.abs(p.y - (f.ny > 0 ? f.y0 : f.y1));
+    if (wallDist > 7) continue;
+    const dx = Math.max(f.x0 - p.x, 0, p.x - f.x1);
+    const dy = Math.max(f.y0 - p.y, 0, p.y - f.y1);
+    if (Math.hypot(dx, dy) < half) return true;
+  }
+  return false;
 }
 
 function isTank(r: RobotState): boolean {

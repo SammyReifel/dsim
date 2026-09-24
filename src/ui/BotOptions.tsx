@@ -11,7 +11,7 @@ const LEVELS: [BotLevel, string][] = [
 /** what the two levels that are more than "faster" actually change */
 const LEVEL_NOTE: Partial<Record<BotLevel, string>> = {
   hard: 'Hard bots work as a team and play defence when you’re carrying.',
-  nightmare: 'Nightmare bots play flat out to beat you. They only defend once they’re ahead.',
+  nightmare: 'Nightmare bots never play defence. Every second goes into outscoring you.',
 };
 
 /**

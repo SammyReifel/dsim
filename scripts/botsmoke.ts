@@ -171,6 +171,8 @@ replays('decode hard pair (45s)', runMatch('decode', 2, 'hard', 9, { player: 'bo
   const blue = r.world.match.scores.blue.total;
   check('decode nightmare pair: outscores a normal opponent', redTotal(r.world) > blue, `${redTotal(r.world)} vs ${blue}`);
   check('decode nightmare pair: no majors', majors(r.world) === 0, JSON.stringify(r.world.match.fouls.red));
+  // it never drops back, even well ahead: a defender cost it more than it denied
+  check('decode nightmare pair: never defends, even ahead', r.defendTicks === 0, `${r.defendTicks} ticks`);
 }
 // TEAMMATE: a bot on the player's own alliance scores for it and never defends anyone
 {
