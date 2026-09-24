@@ -51,6 +51,7 @@ import {
   BB_HIVE_CELL_DY,
   BB_HIVE_X,
   BB_LZ,
+  BB_GARDEN,
   bbHopperCap,
   FLOWER_MOUTH,
 } from '../games/biobuzz/config';
@@ -85,13 +86,31 @@ interface Tune {
    * defence. HARD defends whatever the score; NIGHTMARE only once it is winning, so a bot is
    * never parked in front of you while its alliance falls behind. */
   defendLead: number;
+  /** NIGHTMARE's kit (BIOBUZZ). Each is one habit of a driver who plays the OPPONENT, not
+   * just the field:
+   *  - `starve`: take the POLLEN you are about to reach (when we get there first), your
+   *    GARDEN's, and the FLOWERS on your side — every element we take is one you do not shoot;
+   *  - `harass`: body-block you while you are loaded and we have nothing to deliver, i.e. only
+   *    when it costs you more than it costs us;
+   *  - `clutch`: in the last seconds, only park if there is no TIP left to start (a TIP is 20,
+   *    PARK is 5), and leave for the park at the last moment rather than early;
+   *  - `scoreAware`: behind late, stop blocking and parking and go all-in on scoring; ahead
+   *    late, spend the spare robot-time protecting the lead. */
+  starve: boolean;
+  harass: boolean;
+  clutch: boolean;
+  scoreAware: boolean;
 }
 
 const TUNE: Record<BotLevel, Tune> = {
-  easy: { speed: 0.4, load: 1, slew: 0.035, replan: 24, fullGame: false, sharp: false, coordinate: false, defendLead: Infinity },
-  normal: { speed: 0.62, load: 2, slew: 0.07, replan: 8, fullGame: true, sharp: false, coordinate: false, defendLead: Infinity },
-  hard: { speed: 0.92, load: 3, slew: 0.22, replan: 2, fullGame: true, sharp: true, coordinate: true, defendLead: -Infinity },
-  nightmare: { speed: 1, load: 3, slew: 1, replan: 1, fullGame: true, sharp: true, coordinate: true, defendLead: 15 },
+  easy: { speed: 0.4, load: 1, slew: 0.035, replan: 24, fullGame: false, sharp: false, coordinate: false, defendLead: Infinity,
+    starve: false, harass: false, clutch: false, scoreAware: false },
+  normal: { speed: 0.62, load: 2, slew: 0.07, replan: 8, fullGame: true, sharp: false, coordinate: false, defendLead: Infinity,
+    starve: false, harass: false, clutch: false, scoreAware: false },
+  hard: { speed: 0.92, load: 3, slew: 0.22, replan: 2, fullGame: true, sharp: true, coordinate: true, defendLead: -Infinity,
+    starve: false, harass: false, clutch: true, scoreAware: false },
+  nightmare: { speed: 1, load: 3, slew: 1, replan: 1, fullGame: true, sharp: true, coordinate: true, defendLead: 15,
+    starve: false, harass: false, clutch: true, scoreAware: true },
 };
 
 /** seconds without closing on a target before the bot gives up on it */
@@ -142,6 +161,9 @@ interface Memory {
   /** hopper count at the last shot, and when it last changed — "is anything leaving?" */
   shootHop: number;
   shootLastAt: number;
+  /** NIGHTMARE's opportunistic block: until when, and when it may start another */
+  harassUntil: number;
+  harassCooldown: number;
   /** the stuck watchdog: where the bot was, and when */
   anchor: Vec2;
   anchorAt: number;
@@ -261,6 +283,8 @@ export class OpponentBot {
   private victim = -1;
   /** what the bot is doing, for diagnostics */
   status = '';
+  /** a tank's last forward/reverse choice, for hysteresis */
+  private tankRev = false;
   private mem: Memory = {
     target: null,
     bestDist: Infinity,
@@ -282,6 +306,8 @@ export class OpponentBot {
     shootShift: 0,
     shootHop: -1,
     shootLastAt: 0,
+    harassUntil: -1,
+    harassCooldown: -1,
     anchor: { x: 0, y: 0 },
     anchorAt: 0,
     lastPress: -Infinity,
@@ -420,8 +446,13 @@ export class OpponentBot {
     if (phase === 'teleop') {
       const park = parkSpot(game, r, this.slot);
       const d = Math.hypot(park.x - r.pos.x, park.y - r.pos.y);
-      const leave = clamp(d / (28 * this.tune.speed) + 4, 6, 16);
-      if (world.match.phaseTimeLeft <= leave) {
+      const left = world.match.phaseTimeLeft;
+      // a CLUTCH driver leaves at the last moment, and not at all while a TIP can still start
+      const leave = this.tune.clutch
+        ? clamp(d / (40 * this.tune.speed) + 1.5, 2.5, 10)
+        : clamp(d / (28 * this.tune.speed) + 4, 6, 16);
+      const clutch = this.tune.clutch && game === 'biobuzz' && left > 1 && this.bbClutch(world, r, left);
+      if (left <= leave && !clutch) {
         this.mem.target = null;
         // BIOBUZZ: a bot already lined up on a FLOWER finishes placing first
         if (game === 'biobuzz' && world.match.phaseTimeLeft > 4) {
@@ -434,7 +465,7 @@ export class OpponentBot {
       }
     }
 
-    if (this.team.defenderId === r.id) {
+    if (this.team.defenderId === r.id && !this.behindLate(world, r)) {
       this.status = 'defend';
       this.holding = true;
       return this.defend(world, r, playerId);
@@ -442,6 +473,40 @@ export class OpponentBot {
     if (game === 'biobuzz') return this.bbPlay(world, r);
     if (game === 'chain') return this.chainPlay(world, r);
     return this.decodePlay(world, r);
+  }
+
+  /** our alliance's total minus the best opposing alliance's */
+  private margin(world: World, r: RobotState): number {
+    const other: Alliance = r.alliance === 'red' ? 'blue' : 'red';
+    return world.match.scores[r.alliance].total - world.match.scores[other].total;
+  }
+
+  /** SCORE-AWARE: behind in the last minute — every robot scores, nothing else */
+  private behindLate(world: World, r: RobotState): boolean {
+    return this.tune.scoreAware && world.match.phase === 'teleop' && world.match.phaseTimeLeft < 60 &&
+      this.margin(world, r) < 0;
+  }
+
+  /**
+   * CLUTCH: is there a TIP this bot can still START before the buzzer? A swing that has begun
+   * by 0:00 is scored as the TIP it must become, so what matters is getting the last element in,
+   * not the four seconds after. Worth 20 against PARK's 5 — and behind on the scoreboard, even
+   * a few elements left in the up cell (2 each) beat parking.
+   */
+  private bbClutch(world: World, r: RobotState, left: number): boolean {
+    const hive = world.biobuzz?.hives?.[r.alliance];
+    if (!hive || hive.tipping > 0) return false;
+    const caps = bbCaps(r);
+    const a = r.alliance;
+    const pollen = r.hopper.filter((c) => c !== 'red' && c !== 'blue').length;
+    const nectar = caps.nectarShot ? r.hopper.filter((c) => c === a).length : 0;
+    if (pollen + nectar === 0) return false;
+    const zone = bbZone(a, hive.up, caps);
+    const spot = zone.contains(r.pos) ? r.pos : zone.spot(r.pos, this.slot);
+    const reach = Math.hypot(spot.x - r.pos.x, spot.y - r.pos.y) / (40 * this.tune.speed) + 0.4 * (pollen + nectar);
+    if (reach > left - 0.3) return false;
+    if (bbWouldTip(world, hive.contents, pollen, nectar)) return true;
+    return this.behindLate(world, r) && (pollen + nectar) * 2 > 5;
   }
 
   // ------------------------------------------------------------------ DECODE ----
@@ -631,7 +696,9 @@ export class OpponentBot {
       const cell = { x: a === 'red' ? -BB_HIVE_X : BB_HIVE_X, y: zone.cellY };
       // a turret that is firing stays put; one that has been told to move (shift) moves
       const stay = inZone && caps.turreted && m.shootShift === 0;
-      const cmd = this.drive(r, stay ? r.pos : spot, Math.atan2(cell.y - r.pos.y, cell.x - r.pos.x), 3);
+      // a DUMPER arrives already aimed: its launcher edge at the cell (a rear dumper backs in)
+      const aim = Math.atan2(cell.y - r.pos.y, cell.x - r.pos.x) - (caps.turreted ? 0 : caps.launchAngle);
+      const cmd = this.drive(r, stay ? r.pos : spot, aim, 3);
       // a DUMPER's fire button steers the chassis, so it is held only once in the ring
       if (inZone) cmd.fire = true;
       return finish(cmd);
@@ -648,6 +715,27 @@ export class OpponentBot {
       const cmd = this.drive(r, next.spot(r.pos, this.slot), r.heading, 3);
       cmd.intake = true;
       return finish(cmd);
+    }
+
+    // SMART BLOCK: you are loaded and heading somewhere with it, and we have nothing to deliver
+    // and nothing close to pick up — then a few seconds in your way cost you more than us. Never
+    // when behind late (every robot scores then), never so long it becomes a PIN (`defend`
+    // backs off after 2.5 s of contact, and G421 needs 3).
+    if (this.tune.harass && teleop && left > 22 && !this.behindLate(world, r) && shootable === 0) {
+      const foe = world.robots.find((x) => x.id === this.victim && x.alliance !== a);
+      const lead = this.margin(world, r);
+      if (foe && t >= m.harassCooldown && threat(world, foe)) {
+        const dFoe = Math.hypot(foe.pos.x - r.pos.x, foe.pos.y - r.pos.y);
+        const dWork = target ? Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) : pull !== null ? 40 : Infinity;
+        // ahead late, the spare robot-time is worth more spent on you than on a far pollen
+        const worth = dFoe < 55 && (dWork > 35 || (this.tune.scoreAware && left < 50 && lead > 30));
+        if (worth && m.harassUntil < t) m.harassUntil = t + 3;
+      }
+      if (t < m.harassUntil && foe) {
+        this.status = 'block';
+        if (t + 0.05 >= m.harassUntil) m.harassCooldown = t + 6;
+        return finish(this.defend(world, r, foe.id));
+      }
     }
 
     if (pull !== null) {
@@ -808,7 +896,9 @@ export class OpponentBot {
       const p = this.pullPose(r, i).pos;
       let pollenIn = 0;
       for (const id of stack) if (kindOf(id) === 'pollen') pollenIn++;
-      const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - 6 * Math.min(pollenIn, 4);
+      let d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - 6 * Math.min(pollenIn, 4);
+      // STARVE: the flowers on the opponent's side are the ones feeding them
+      if (this.tune.starve && BB_FLOWERS[i].x * ownSide(world, r.alliance) < 0) d -= 12;
       if (d < bestD) {
         bestD = d;
         best = i;
@@ -1004,6 +1094,15 @@ export class OpponentBot {
           if (q !== b && wanted(q) && Math.abs(q.pos.x - b.pos.x) < 12 && Math.abs(q.pos.y - b.pos.y) < 12) near++;
         }
         d -= 4 * Math.min(near, 3);
+        if (this.tune.starve) d -= this.denial(r, b.pos, d);
+        if (this.tune.sharp) {
+          // NECTAR IS WORTH NEARLY THREE POLLEN to a build that can shoot it: 4 NECTAR + 1 POLLEN
+          // tip the HIVE where 8 POLLEN are needed without it, and each TIP spills it back out to
+          // be used again. A sharp bot hoards and recycles it.
+          if ((b.color === 'red' || b.color === 'blue') && bbCaps(r).nectarShot) d -= 22;
+          // a TURRET fires while it collects, so an element already in its zone is half-scored
+          if (bbCaps(r).turreted && zone.contains(b.pos)) d -= 10;
+        }
       }
       // stick with the current target unless something is clearly closer (no dithering)
       if (key === m.target) d -= 8;
@@ -1017,6 +1116,25 @@ export class OpponentBot {
       }
     }
     return best;
+  }
+
+  /**
+   * STARVE — how much taking the element at `p` hurts the OPPONENT, as inches of drive it is
+   * worth. An element an opponent is about to reach is theirs next unless we get there first; one
+   * in their GARDEN is a point for them at the buzzer. Only ever a tie-breaker between elements
+   * of similar cost, never a reason to cross the field for one.
+   */
+  private denial(r: RobotState, p: Vec2, ourCost: number): number {
+    let v = 0;
+    for (const o of this.others) {
+      if (o.alliance === r.alliance) continue;
+      const dO = Math.hypot(o.pos.x - p.x, o.pos.y - p.y);
+      // ours if we are nearly as close as they are; theirs is the one to take
+      if (dO < 50 && ourCost < dO * 1.3) v = Math.max(v, 18 * (1 - dO / 50) + 6);
+    }
+    const g = BB_GARDEN[r.alliance === 'red' ? 'blue' : 'red'];
+    if (p.x > g.x0 - 3 && p.x < g.x1 + 3 && p.y > g.y0 - 3 && p.y < g.y1 + 3) v += 10;
+    return v;
   }
 
   // --------------------------------------------------------------- defending ----
@@ -1152,7 +1270,10 @@ export class OpponentBot {
       let fwd = 0;
       if (d > arrive && sp > 1e-6) {
         const travel = Math.atan2(fy, fx);
-        const rev = Math.abs(wrapAngle(face - travel)) > Math.PI / 2;
+        // with HYSTERESIS: near 90° the choice flips every tick and the tank just shivers
+        const off = Math.abs(wrapAngle(face - travel));
+        const rev = off > Math.PI / 2 + (this.tankRev ? -0.35 : 0.35);
+        this.tankRev = rev;
         err = wrapAngle((rev ? travel + Math.PI : travel) - r.heading);
         fwd = sp * Math.max(0, Math.cos(err)) * (rev ? -1 : 1);
       } else {
@@ -1233,6 +1354,9 @@ interface BbCaps {
   nectarShot: boolean;
   /** the Box Tube's placement point, robot frame, or null without one */
   place: Vec2 | null;
+  /** which way a TURRETLESS launcher throws, robot frame (0 = over the front). The chassis has
+   * to face the cell by this much; turning after arrival is the slowest part of a dump. */
+  launchAngle: number;
   mouths: Mouth[];
   cap: number;
 }
@@ -1242,9 +1366,12 @@ const capsCache = new WeakMap<RobotSpec, BbCaps>();
 function bbCaps(r: RobotState): BbCaps {
   let c = capsCache.get(r.spec);
   if (!c) {
-    const kind = bbLauncherOf(r.spec, 0).kind;
+    const launcher = bbLauncherOf(r.spec, 0);
+    const kind = launcher.kind;
+    const m = launcher.mount;
     c = {
       turreted: kind === 'turret' || kind === 'twinturret',
+      launchAngle: m === 'back' ? Math.PI : m === 'left' ? Math.PI / 2 : m === 'right' ? -Math.PI / 2 : 0,
       nectarShot: bbIntakeAccepts(r.spec, r.alliance, r.alliance),
       place: bbPlacePointLocal(r.spec),
       mouths: mouthsFromRects(bbMouths(r.spec)),
@@ -1305,7 +1432,13 @@ function bbZone(a: Alliance, up: 'north' | 'south', caps: BbCaps): BbZone {
     },
     spot: (p, slot, shift = 0) => {
       // on the ring at the bearing the bot already has, kept outboard (and nudged per attempt)
-      const phi = clamp(Math.atan2(p.x - hx, s * (p.y - cy)), -0.8, 0.8) + (shift === 1 ? 0.5 : shift === 2 ? -0.5 : 0);
+      // clamped AFTER the nudge: a fallback spot that has swung round past the ring's outboard
+      // limit is not a shooting spot at all, and a bot sent there stands in it not firing
+      const phi = clamp(
+        clamp(Math.atan2(p.x - hx, s * (p.y - cy)), -0.8, 0.8) + (shift === 1 ? 0.5 : shift === 2 ? -0.5 : 0),
+        -0.95,
+        0.95,
+      );
       const R = 25 + slot * 4;
       return { x: hx + R * Math.sin(phi), y: cy + s * R * Math.cos(phi) };
     },
