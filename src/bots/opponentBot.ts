@@ -113,6 +113,44 @@ const TUNE: Record<BotLevel, Tune> = {
     starve: false, harass: false, clutch: true, scoreAware: true },
 };
 
+/**
+ * THE TUNING KNOBS — the numbers the BIOBUZZ brain's choices turn on, in one place so a variant
+ * can be raced against the defaults head to head (`makeBots(..., knobs)`; the tuning arena does
+ * exactly that) instead of edited in and eyeballed. The defaults are the measured winners.
+ */
+export interface BotKnobs {
+  /** inches of drive a NECTAR pickup is worth, to a build that can shoot it */
+  nectarBonus: number;
+  /** inches a pickup already inside a TURRET's firing zone is worth */
+  zoneBonus: number;
+  /** fraction of the trip from a pickup to the firing zone charged to that pickup */
+  zoneTrip: number;
+  /** inches per neighbouring element (up to three) a pickup is worth */
+  cluster: number;
+  /** inches of preference for the element already being chased (no dithering) */
+  sticky: number;
+  /** inches per POLLEN in a FLOWER stack that pulling from it is worth */
+  pullStack: number;
+  /** a pickup within this many inches beats repositioning during a HIVE swing */
+  swingGrab: number;
+  /** seconds with nothing leaving the hopper before a shooter moves spot */
+  shootStall: number;
+  /** end AUTO parked in the LOADING ZONE (+5), clear of the wall (LEAVE stays) */
+  autoPark: boolean;
+}
+
+export const DEFAULT_KNOBS: BotKnobs = {
+  nectarBonus: 22,
+  zoneBonus: 10,
+  zoneTrip: 0.35,
+  cluster: 4,
+  sticky: 8,
+  pullStack: 6,
+  swingGrab: 30,
+  shootStall: 1.5,
+  autoPark: true,
+};
+
 /** seconds without closing on a target before the bot gives up on it */
 const STUCK_S = 2;
 /** inches of progress that count as "closing" */
@@ -327,6 +365,7 @@ export class OpponentBot {
     /** which of the bots this is (0, 1) — spreads their spots so they do not stack */
     readonly slot: number,
     readonly team: BotTeam,
+    readonly knobs: BotKnobs = DEFAULT_KNOBS,
   ) {}
 
   /** the element / flower this bot is going for, for `BotTeam.claimedBy` */
@@ -484,6 +523,20 @@ export class OpponentBot {
         this.status = 'park';
         this.holding = true;
         return this.drive(r, park, parkFace(game, r), 1);
+      }
+    }
+
+    // AUTO PARK (BIOBUZZ): finish AUTO partly in the LOADING ZONE — 5 points, assessed at the end
+    // of AUTO — and clear of the wall, so LEAVE (3) still counts. Leave for it at the last
+    // moment a sharp driver would.
+    if (phase === 'auto' && game === 'biobuzz' && this.tune.sharp && this.knobs.autoPark) {
+      const park = parkSpot(game, r, this.slot);
+      const d = Math.hypot(park.x - r.pos.x, park.y - r.pos.y);
+      if (world.match.phaseTimeLeft <= d / (40 * this.tune.speed) + 1.2) {
+        this.mem.target = null;
+        this.status = 'auto-park';
+        this.holding = true;
+        return this.drive(r, park, r.heading, 1);
       }
     }
 
@@ -692,6 +745,7 @@ export class OpponentBot {
     // ── SHOOT ──
     const tipNow = hive ? bbWouldTip(world, hive.contents, pollen, caps.nectarShot ? nectar : 0) : false;
     const load = caps.turreted ? caps.cap : Math.min(caps.cap, this.tune.load + 1);
+    const K = this.knobs;
     const goShoot =
       shootable > 0 && !tipping && !!zone &&
       (shootable >= load || !room || (!target && pull === null) || tipNow);
@@ -706,7 +760,7 @@ export class OpponentBot {
         if (held < m.shootHop) m.shootShift = 0;
         m.shootHop = held;
         m.shootLastAt = t;
-      } else if (zone.contains(r.pos) && t - m.shootLastAt > 1.5) {
+      } else if (zone.contains(r.pos) && t - m.shootLastAt > K.shootStall) {
         m.shootShift = (m.shootShift + 1) % 4;
         m.shootLastAt = t;
       }
@@ -748,7 +802,7 @@ export class OpponentBot {
 
     // THE HIVE IS SWINGING and we are loaded: the other cell is about to be the up one, so be
     // there when it lands rather than waiting where the old one was
-    const nearTarget = target && Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) < 30;
+    const nearTarget = target && Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) < K.swingGrab;
     if (this.tune.sharp && hive && hive.tipping > 0 && shootable >= Math.min(2, caps.cap) && !nearTarget && pull === null) {
       this.status = 'reposition';
       this.holding = true;
@@ -937,7 +991,7 @@ export class OpponentBot {
       const p = this.pullPose(r, i).pos;
       let pollenIn = 0;
       for (const id of stack) if (kindOf(id) === 'pollen') pollenIn++;
-      let d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - 6 * Math.min(pollenIn, 4);
+      let d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - this.knobs.pullStack * Math.min(pollenIn, 4);
       // STARVE: the flowers on the opponent's side are the ones feeding them
       if (this.tune.starve && BB_FLOWERS[i].x * ownSide(world, r.alliance) < 0) d -= 12;
       if (d < bestD) {
@@ -1128,25 +1182,25 @@ export class OpponentBot {
         // the trip AFTER the pickup counts too, and so do the neighbours it brings in reach
         if (!zone.contains(b.pos)) {
           const z = zone.spot(b.pos, this.slot);
-          d += 0.35 * Math.hypot(z.x - b.pos.x, z.y - b.pos.y);
+          d += this.knobs.zoneTrip * Math.hypot(z.x - b.pos.x, z.y - b.pos.y);
         }
         let near = 0;
         for (const q of world.balls) {
           if (q !== b && wanted(q) && Math.abs(q.pos.x - b.pos.x) < 12 && Math.abs(q.pos.y - b.pos.y) < 12) near++;
         }
-        d -= 4 * Math.min(near, 3);
+        d -= this.knobs.cluster * Math.min(near, 3);
         if (this.tune.starve) d -= this.denial(r, b.pos, d);
         if (this.tune.sharp) {
           // NECTAR IS WORTH NEARLY THREE POLLEN to a build that can shoot it: 4 NECTAR + 1 POLLEN
           // tip the HIVE where 8 POLLEN are needed without it, and each TIP spills it back out to
           // be used again. A sharp bot hoards and recycles it.
-          if ((b.color === 'red' || b.color === 'blue') && bbCaps(r).nectarShot) d -= 22;
+          if ((b.color === 'red' || b.color === 'blue') && bbCaps(r).nectarShot) d -= this.knobs.nectarBonus;
           // a TURRET fires while it collects, so an element already in its zone is half-scored
-          if (bbCaps(r).turreted && zone.contains(b.pos)) d -= 10;
+          if (bbCaps(r).turreted && zone.contains(b.pos)) d -= this.knobs.zoneBonus;
         }
       }
       // stick with the current target unless something is clearly closer (no dithering)
-      if (key === m.target) d -= 8;
+      if (key === m.target) d -= this.knobs.sticky;
       // one sitting against an opponent is one you cannot reach without shoving it
       for (const o of this.others) {
         if (o.alliance !== r.alliance && Math.hypot(b.pos.x - o.pos.x, b.pos.y - o.pos.y) < halfDiag(o) + 12) d += 60;
@@ -1753,9 +1807,9 @@ function clampField(p: Vec2): Vec2 {
  * spreads their spots: the player's TEAMMATE bot takes slot 1, leaving slot 0's spots — the
  * obvious ones — to the human it is playing beside.
  */
-export function makeBots(ids: number[], level: BotLevel, firstSlot = 0): OpponentBot[] {
+export function makeBots(ids: number[], level: BotLevel, firstSlot = 0, knobs: BotKnobs = DEFAULT_KNOBS): OpponentBot[] {
   const team = new BotTeam();
-  const bots = ids.map((id, i) => new OpponentBot(id, level, firstSlot + i, team));
+  const bots = ids.map((id, i) => new OpponentBot(id, level, firstSlot + i, team, knobs));
   team.bots.push(...bots);
   return bots;
 }
