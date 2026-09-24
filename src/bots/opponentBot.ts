@@ -158,6 +158,9 @@ interface Memory {
   nearSince: number | null;
   /** which alternative shooting spot the bot is trying (after one that did not work) */
   shootShift: number;
+  /** closest the bot has come to its shooting spot, and when — "is it getting there?" */
+  spotBest: number;
+  spotAt: number;
   /** hopper count at the last shot, and when it last changed — "is anything leaving?" */
   shootHop: number;
   shootLastAt: number;
@@ -305,6 +308,8 @@ export class OpponentBot {
     nearSince: null,
     shootShift: 0,
     shootHop: -1,
+    spotBest: Infinity,
+    spotAt: 0,
     shootLastAt: 0,
     harassUntil: -1,
     harassCooldown: -1,
@@ -408,8 +413,25 @@ export class OpponentBot {
       if (m.target) m.blacklist.set(m.target, t + BLACKLIST_S);
       m.target = null;
       m.escapes++;
-      const cl = Math.hypot(r.pos.x, r.pos.y) || 1;
-      const out = rot({ x: -r.pos.x / cl, y: -r.pos.y / cl }, (m.escapes % 2 ? 1 : -1) * (Math.PI / 3));
+      // a shooting spot we could not reach is not the spot: try the next one after this
+      // FACE TO FACE WITH A ROBOT? Neither side will shove (a PIN is a MAJOR), so two polite
+      // robots can stand nose to nose for the rest of the match. Back away from it, then.
+      // Otherwise out toward open floor, swung one way or the other on alternate escapes.
+      let near: RobotState | null = null;
+      for (const o of this.others) {
+        const d = Math.hypot(o.pos.x - r.pos.x, o.pos.y - r.pos.y);
+        if (d < halfDiag(o) + halfDiag(r) + 10 && (!near || d < Math.hypot(near.pos.x - r.pos.x, near.pos.y - r.pos.y))) near = o;
+      }
+      let out: Vec2;
+      if (near) {
+        const ax = r.pos.x - near.pos.x;
+        const ay = r.pos.y - near.pos.y;
+        const al = Math.hypot(ax, ay) || 1;
+        out = rot({ x: ax / al, y: ay / al }, (m.escapes % 2 ? 1 : -1) * 0.5);
+      } else {
+        const cl = Math.hypot(r.pos.x, r.pos.y) || 1;
+        out = rot({ x: -r.pos.x / cl, y: -r.pos.y / cl }, (m.escapes % 2 ? 1 : -1) * (Math.PI / 3));
+      }
       m.escapeTo = clampField({ x: r.pos.x + out.x * 30, y: r.pos.y + out.y * 30 });
       m.escapeUntil = t + ESCAPE_S;
       return cmd;
@@ -688,7 +710,26 @@ export class OpponentBot {
         m.shootShift = (m.shootShift + 1) % 4;
         m.shootLastAt = t;
       }
-      const spot = zone.spot(r.pos, this.slot, m.shootShift);
+      let spot = zone.spot(r.pos, this.slot, m.shootShift);
+      // NOT GETTING THERE? Out of the zone and no closer to the spot for a second means
+      // something is in the way — usually a robot we will not shove. Pick another spot rather
+      // than stand behind it (the reported "stuck just short of shooting position").
+      if (!zone.contains(r.pos)) {
+        const ds = Math.hypot(spot.x - r.pos.x, spot.y - r.pos.y);
+        if (ds < m.spotBest - 2) {
+          m.spotBest = ds;
+          m.spotAt = t;
+        } else if (t - m.spotAt > (isTank(r) ? 2.8 : 1.2)) {
+          // (a TANK turning on the spot to line up is not getting closer either, and is not stuck)
+          m.shootShift = (m.shootShift % 3) + 1;
+          m.spotBest = Infinity;
+          m.spotAt = t;
+          spot = zone.spot(r.pos, this.slot, m.shootShift);
+        }
+      } else {
+        m.spotBest = Infinity;
+        m.spotAt = t;
+      }
       // AUTO: our own half (G402 bills a MAJOR for contact from the far side)
       if (world.match.phase === 'auto') spot.x = ownSide(world, a) * Math.max(ownSide(world, a) * spot.x, 6);
       const inZone = zone.contains(r.pos);
@@ -1410,10 +1451,12 @@ function bbZone(a: Alliance, up: 'north' | 'south', caps: BbCaps): BbZone {
       spot: (p, slot, shift = 0) => {
         if (shift > 0) {
           // the fallbacks, in turn: straight out from the cell, then out to either side of it
+          // spread wide: the centre is where BOTH alliances' robots gather (the HIVES are 25 in
+          // apart), so the likeliest reason a spot did not work is somebody standing on it
           const alt = [
-            { x: hx, y: cy + s * 30 },
-            { x: hx - 24, y: cy + s * 24 },
-            { x: hx + 24, y: cy + s * 24 },
+            { x: hx - 30, y: cy + s * 26 },
+            { x: hx + 30, y: cy + s * 26 },
+            { x: hx, y: cy + s * 40 },
           ][(shift - 1 + slot) % 3];
           return { x: clamp(alt.x, -lim, lim), y: clamp(alt.y, -lim, lim) };
         }
@@ -1591,8 +1634,8 @@ const BAR_BOXES = [-1, 1].map((sx) => {
 });
 type Box = (typeof BAR_BOXES)[number];
 
-function inBox(p: Vec2, b: Box): boolean {
-  return p.x > b.x0 && p.x < b.x1 && p.y > b.y0 && p.y < b.y1;
+function inBox(p: Vec2, b: Box, inset = 0): boolean {
+  return p.x > b.x0 + inset && p.x < b.x1 - inset && p.y > b.y0 + inset && p.y < b.y1 - inset;
 }
 
 /** does segment p→q pass through the interior of `b`? (Liang–Barsky) */
@@ -1623,12 +1666,44 @@ function segHitsBox(p: Vec2, q: Vec2, b: Box): boolean {
   );
 }
 
+/**
+ * A target INSIDE a keep-out box — a POLLEN lying against a bar, usually on its hive side,
+ * where the tips spill — cannot use the box, so it is routed round the BAR ITSELF: a thin wall
+ * at x = ±24.5 from y = −19.4 to +19.4. If the straight line crosses it, go round the nearer
+ * end: first to a point past that end on our own side, then across to the same point on the
+ * target's side. (It used to go straight, and a bot nosed into the bar and rocked there for
+ * twenty seconds — the reported "stuck just below the hive".)
+ */
+function bbRoundBar(p: Vec2, to: Vec2): Vec2 | null {
+  const endY = BB_FRAME_Y;
+  const clear = 13;
+  for (const sx of [-1, 1]) {
+    const bx = sx * (BB_FRAME_BAR_IN + BB_FRAME_BAR_OUT) / 2;
+    const sp = Math.sign(p.x - bx) || 1;
+    const st = Math.sign(to.x - bx) || 1;
+    if (sp === st) continue;
+    // where the straight line meets the bar's line
+    const k = (bx - p.x) / (to.x - p.x);
+    const yCross = p.y + k * (to.y - p.y);
+    if (Math.abs(yCross) > endY + 8) continue;
+    const ey = (Math.sign(yCross) || Math.sign(to.y) || 1) * (endY + clear);
+    // past the end already? then over to the target's side; otherwise out to the end first
+    if (Math.abs(p.y) >= endY + clear - 3) return { x: bx + st * 10, y: ey };
+    return { x: bx + sp * 10, y: ey };
+  }
+  return null;
+}
+
 function bbRoute(p: Vec2, to: Vec2): Vec2 {
   for (const b of BAR_BOXES) {
-    // the target itself is in the keep-out (a pollen by the bar): go straight, and let the
-    // stuck timer be the backstop
-    if (inBox(to, b)) continue;
-    if (inBox(p, b)) {
+    if (inBox(to, b)) {
+      const via = bbRoundBar(p, to);
+      if (via) return via;
+      continue;
+    }
+    // DEEP inside only (a dead band): a robot sitting ON the box edge flipped between this and
+    // the corner route below every tick, and a tank shivered there for ten seconds
+    if (inBox(p, b, 2)) {
       // already inside the keep-out (a shove put us there): leave sideways, the short way
       const left = p.x - b.x0;
       const right = b.x1 - p.x;
@@ -1658,6 +1733,10 @@ function bbRoute(p: Vec2, to: Vec2): Vec2 {
     return best ?? to;
   }
   return to;
+}
+
+function isTank(r: RobotState): boolean {
+  return r.spec.drivetrain === 'tank' || (r.spec.drivetrain === 'butterfly' && r.butterflyTank);
 }
 
 function halfDiag(r: RobotState): number {
