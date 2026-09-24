@@ -1,6 +1,36 @@
+# HANDOFF — 2026-09-24, later (BIOBUZZ bots: pre-fire, no free fouls)
+
+**READ FIRST.** `npm run build` and `npm run test:bots` are green. `npm test` was NOT run. Nothing
+outside `src/bots/` changed. All work is in `src/bots/opponentBot.ts`.
+
+**Done:**
+- **Firing into the RISING cell mid-swing** (owner report: "they wait to shoot until the thing is
+  all the way up, but you can shoot before it is and still get it in"). Once the bar passes level
+  (`released`), `hiveTakingSide` is the tray coming up. Bots now treat that cell as the up cell a
+  little before release, to allow for flight time: `preFire` 0.4 s for turrets, `preFireDump`
+  0.9 s for dumpers. Measured in the 2v2 Nightmare mirror: turning it off loses **31 points a
+  match**. For dumpers, 0.9 beats both 0.4 and 1.5 by about 18 points.
+- **No more free G402s.** A bot fully across the centre line in AUTO, touching an opponent, gave
+  away a 20-point MAJOR in about half of all 2v2 matches. The cause was the robot-avoidance swerve
+  in `drive()` carrying bots sideways over the line. The line is now the LAST thing `drive()`
+  applies (`autoSide`, `lim`). It sits 5 in inside the chassis' shorter half-side, so a tank's
+  overshoot still leaves a corner at home.
+- **No more tank G421 pins.** `noPin` is the final pass in `command()`. It asks `driveIntent`
+  (the same function G421 reads) and drops any drive toward an opponent within 3 in. A tank keeps
+  its turn and stops driving. Result: 0 majors over 16 audited 2v2 matches, where there used to be
+  about 1 per match.
+- `swingPlan` / `teamTip` (from the previous pass) now apply to TURRETS only. They cost dumpers
+  4 tips a match.
+- Net against the previous merged brain: +13 a match before pre-fire, and pre-fire adds about +31
+  on top.
+
+**Next:** Sniper `preFire` has not been swept (0.4 was a guess, and 0.9 read −30 on Sniper). Try
+0.2 and 0.6 with `BUILDS=Sniper`. The scratchpad harnesses (`seq.mjs`, `tune.mts`, `foul.mts`,
+`fill.mts`) are not in the repo. Each A/B is 32 matches in about 100 s.
+
 # HANDOFF — 2026-09-24 (BIOBUZZ bots, deep pass)
 
-**READ FIRST.** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (62 checks) are
+**(Superseded by the section above.)** `npm run build`, `server:check`, `uiaudit` and `npm run test:bots` (62 checks) are
 green. `npm test` was NOT run. Nothing in `src/sim/`, `src/config.ts` or `src/games/` changed.
 The owner has said to focus on BIOBUZZ only. The DECODE and CR bot paths are untouched and still
 tested, but not being improved.
