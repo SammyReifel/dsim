@@ -117,6 +117,17 @@ const TUNE: Record<BotLevel, Tune> = {
 };
 
 /**
+ * BIOBUZZ drives the lower levels slower than the other games do: with the whole kit its
+ * Normal scored within a tip of Hard. The ladder is the numbers in `LEVEL_KNOBS`' note.
+ */
+const BB_TUNE: Record<BotLevel, Tune> = {
+  easy: { ...TUNE.easy, speed: 0.35 },
+  normal: { ...TUNE.normal, speed: 0.55 },
+  hard: { ...TUNE.hard, speed: 0.85 },
+  nightmare: TUNE.nightmare,
+};
+
+/**
  * THE TUNING KNOBS — the numbers the BIOBUZZ brain's choices turn on, in one place so a variant
  * can be raced against the defaults head to head (`makeBots(..., knobs)`; the tuning arena does
  * exactly that) instead of edited in and eyeballed. The defaults are the measured winners.
@@ -407,7 +418,7 @@ export class OpponentBot {
   }
 
   private get tune(): Tune {
-    return TUNE[this.level];
+    return this.game === 'biobuzz' ? BB_TUNE[this.level] : TUNE[this.level];
   }
 
   command(world: World, playerId: number): RobotCommand {
@@ -2042,9 +2053,27 @@ function clampField(p: Vec2): Vec2 {
  * spreads their spots: the player's TEAMMATE bot takes slot 1, leaving slot 0's spots — the
  * obvious ones — to the human it is playing beside.
  */
+/**
+ * THE LADDER'S HABITS (BIOBUZZ). The defaults are NIGHTMARE's, the measured best; the lower
+ * levels play without the habits that separate a strong driver from an ordinary one. Easy and
+ * Normal wait for the HIVE to settle before they shoot, fill their own hopper instead of
+ * reading the team's, and never plan around a swing. Hard has all of that but does not steal
+ * the opponent's spill: it plays defence instead. Measured as a same-level 2v2 on Sniper, the
+ * pair scores roughly Easy 125, Normal 300, Hard 450, Nightmare 520; head to head a Nightmare
+ * pair beats a Hard pair by ~40 a match (11 of 16) and Hard beats Normal by ~160.
+ */
+const LEVEL_KNOBS: Record<BotLevel, Partial<BotKnobs>> = {
+  easy: { preFire: -1, preFireDump: -1, teamTip: false, swingPlan: false, spillWait: false, spillSteal: false },
+  normal: { preFire: -1, preFireDump: -1, teamTip: false, swingPlan: false, spillWait: false, spillSteal: false },
+  hard: { spillSteal: false },
+  nightmare: {},
+};
+
 export function makeBots(ids: number[], level: BotLevel, firstSlot = 0, knobs: BotKnobs = DEFAULT_KNOBS): OpponentBot[] {
   const team = new BotTeam();
-  const bots = ids.map((id, i) => new OpponentBot(id, level, firstSlot + i, team, knobs));
+  // a caller racing its own knobs (the tuning arena) gets exactly those; everyone else gets the level's
+  const k = knobs === DEFAULT_KNOBS ? { ...DEFAULT_KNOBS, ...LEVEL_KNOBS[level] } : knobs;
+  const bots = ids.map((id, i) => new OpponentBot(id, level, firstSlot + i, team, k));
   team.bots.push(...bots);
   return bots;
 }

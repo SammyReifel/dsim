@@ -1,6 +1,26 @@
+# HANDOFF — 2026-09-24, the difficulty ladder (BIOBUZZ)
+
+**READ FIRST.** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run.
+Only `src/bots/opponentBot.ts` changed.
+
+**Ask:** "make easy medium hard accordingly", now that Nightmare beats the owner.
+
+**Done:**
+- **`LEVEL_KNOBS`.** The per-level habits, merged in `makeBots` unless a caller passes its own
+  knobs (the tuning arena does).
+  - Easy and Normal: no pre-fire, no team-tip, no swing plan, no spill ambush, no stealing.
+  - Hard: everything except stealing, because it plays defence instead.
+  - Nightmare: the full defaults.
+- **`BB_TUNE`.** BIOBUZZ-only speeds: Easy 0.35, Normal 0.55, Hard 0.85. DECODE and CR keep the
+  old ones, because applying the cut everywhere broke `chain normal: ascends a ring stand`.
+- **Measured ladder** (same-level 2v2 pair score, Sniper): Easy ~125, Normal ~300, Hard ~450,
+  Nightmare ~520.
+  - Head to head, Nightmare beats Hard by ~40 (11 of 16) and Hard beats Normal by ~160.
+  - Always-on defence for Nightmare measured −21.8, so it stays off.
+
 # HANDOFF — 2026-09-24, spill ambush (BIOBUZZ Nightmare)
 
-**READ FIRST.** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run. Only
+**(Superseded by the section above.)** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run. Only
 `src/bots/opponentBot.ts` changed.
 
 **Finding** (`spill.mts` in the scratchpad tracks every `HIVE SPILLS` event): about 45% of each
