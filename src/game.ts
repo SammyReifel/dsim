@@ -487,7 +487,7 @@ export class GameController {
       for (let i = 0; i < botCount; i++) {
         const id = 2 + i;
         botIds.push(id);
-        setups.push(botSetup(this.gameId, id, opp, i, { level }));
+        setups.push(botSetup(this.gameId, id, opp, i, { level, spec: s.spec }));
       }
     }
     this.bots = makeBots(botIds, level);
@@ -498,6 +498,7 @@ export class GameController {
       setups.push(
         botSetup(this.gameId, 1, s.alliance, s.startIndex === 1 ? 0 : 1, {
           level,
+          spec: s.spec,
           name: 'Teammate',
           teamName: 'Teammate bot',
         }),

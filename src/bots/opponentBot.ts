@@ -51,9 +51,13 @@ import {
   BB_HIVE_CELL_DY,
   BB_HIVE_X,
   BB_LZ,
+  bbHopperCap,
   FLOWER_MOUTH,
 } from '../games/biobuzz/config';
-import { bbFlowerInReach, bbFootprint, bbPlacePointLocal } from '../games/biobuzz/robot';
+import { bbFlowerInReach, bbMouths, bbPlacePointLocal } from '../games/biobuzz/robot';
+import { bbIntakeAccepts, bbLauncherOf } from '../games/biobuzz/mechs';
+import { chainIntakeMouths } from '../games/chain/state';
+import type { RobotSpec } from '../types';
 import { flowerFits, flowerScore } from '../games/biobuzz/flower';
 import type { BbElementKind } from '../games/biobuzz/flower';
 
@@ -73,6 +77,10 @@ interface Tune {
   fullGame: boolean;
   /** team play: role split + defence (`BotTeam`) */
   coordinate: boolean;
+  /** BIOBUZZ: a turret holds fire while it collects (shoots on the move), and a loaded bot
+   * heads for the next up cell while the HIVE is still swinging. The two habits that separate
+   * a good driver from a merely fast one. */
+  sharp: boolean;
   /** the lead over the player's alliance the team must hold before it spends a robot on
    * defence. HARD defends whatever the score; NIGHTMARE only once it is winning, so a bot is
    * never parked in front of you while its alliance falls behind. */
@@ -80,10 +88,10 @@ interface Tune {
 }
 
 const TUNE: Record<BotLevel, Tune> = {
-  easy: { speed: 0.55, load: 1, slew: 0.06, replan: 12, fullGame: false, coordinate: false, defendLead: Infinity },
-  normal: { speed: 0.8, load: 2, slew: 0.12, replan: 3, fullGame: true, coordinate: false, defendLead: Infinity },
-  hard: { speed: 1, load: 3, slew: 0.25, replan: 1, fullGame: true, coordinate: true, defendLead: -Infinity },
-  nightmare: { speed: 1, load: 3, slew: 0.4, replan: 1, fullGame: true, coordinate: true, defendLead: 15 },
+  easy: { speed: 0.4, load: 1, slew: 0.035, replan: 24, fullGame: false, sharp: false, coordinate: false, defendLead: Infinity },
+  normal: { speed: 0.62, load: 2, slew: 0.07, replan: 8, fullGame: true, sharp: false, coordinate: false, defendLead: Infinity },
+  hard: { speed: 0.92, load: 3, slew: 0.22, replan: 2, fullGame: true, sharp: true, coordinate: true, defendLead: -Infinity },
+  nightmare: { speed: 1, load: 3, slew: 1, replan: 1, fullGame: true, sharp: true, coordinate: true, defendLead: 15 },
 };
 
 /** seconds without closing on a target before the bot gives up on it */
@@ -127,6 +135,16 @@ interface Memory {
   /** BIOBUZZ flower retrieval: when the hopper last grew while on the foot, and how full */
   pullSince: number | null;
   pullHopper: number;
+  /** when the bot got CLOSE to a pose it needs to be exactly on (a FLOWER) without making it */
+  nearSince: number | null;
+  /** which alternative shooting spot the bot is trying (after one that did not work) */
+  shootShift: number;
+  /** hopper count at the last shot, and when it last changed — "is anything leaving?" */
+  shootHop: number;
+  shootLastAt: number;
+  /** the stuck watchdog: where the bot was, and when */
+  anchor: Vec2;
+  anchorAt: number;
   lastPress: number;
   /** the last planned command and when it was planned (EASY re-plans rarely) */
   plan: RobotCommand | null;
@@ -182,12 +200,10 @@ export class BotTeam {
           const r = world.robots.find((x) => x.id === b.robotId);
           return r ? Math.hypot(r.pos.x - player.pos.x, r.pos.y - player.pos.y) : Infinity;
         };
-        if (this.bots.length >= 2) {
-          want = [...this.bots].sort((a, b) => near(a) - near(b))[0].robotId;
-        } else {
-          const g = goalOf(world, player.alliance);
-          if (Math.hypot(g.x - player.pos.x, g.y - player.pos.y) < 70) want = first.robotId;
-        }
+        // A LONE BOT NEVER DEFENDS BY ROLE — a lone defender scores nothing, and every second it
+        // spends in front of you is a second you are not being outscored. It still defends when
+        // there is nothing left to collect (`bbPlay`'s idle branch).
+        if (this.bots.length >= 2) want = [...this.bots].sort((a, b) => near(a) - near(b))[0].robotId;
       }
     }
     // NO DEFENCE INTO THE ENDGAME. The player is about to park, and in DECODE any contact with a
@@ -209,10 +225,17 @@ export class BotTeam {
   }
 }
 
-/** is the player carrying enough to be worth stopping? */
+/** is the player carrying enough to be worth stopping — and actually going somewhere with it? */
 function threat(world: World, p: RobotState): boolean {
   const game = world.game ?? 'decode';
-  if (game === 'biobuzz') return p.hopper.filter((c) => c !== 'red' && c !== 'blue').length >= 2;
+  if (game === 'biobuzz') {
+    // a robot sitting still with a full hopper is not a threat to anybody; one on the move, or
+    // already where its shots land, is
+    const up = world.biobuzz?.hives?.[p.alliance]?.up ?? 'north';
+    const s = up === 'south' ? -1 : 1;
+    const moving = Math.hypot(p.vel.x, p.vel.y) > 10;
+    return p.hopper.filter((c) => c !== 'red' && c !== 'blue').length >= 2 && (moving || s * p.pos.y >= 20);
+  }
   if (game === 'chain') return p.hopper.length >= 4;
   return p.hopper.length >= 2;
 }
@@ -231,6 +254,13 @@ export class OpponentBot {
   /** set by a plan that is DELIBERATELY pressing into something (a gate, a FLOWER foot), so
    * `unstick` does not read the stall as being wedged */
   private pressing = false;
+  /** set by a plan that is DELIBERATELY standing still (shooting, placing, parked, waiting), so
+   * the stuck watchdog leaves it alone */
+  private holding = false;
+  /** the robot this bot's team plays against (the player), for idle defence */
+  private victim = -1;
+  /** what the bot is doing, for diagnostics */
+  status = '';
   private mem: Memory = {
     target: null,
     bestDist: Infinity,
@@ -248,6 +278,12 @@ export class OpponentBot {
     gateCooldown: -1,
     pullSince: null,
     pullHopper: 0,
+    nearSince: null,
+    shootShift: 0,
+    shootHop: -1,
+    shootLastAt: 0,
+    anchor: { x: 0, y: 0 },
+    anchorAt: 0,
     lastPress: -Infinity,
     plan: null,
     planTick: -Infinity,
@@ -333,6 +369,25 @@ export class OpponentBot {
       out.intake = cmd.intake;
       return out;
     }
+    // THE WATCHDOG: whatever the plan says, a bot that has gone nowhere for a few seconds
+    // without MEANING to stand still is stuck on something — give up its target and back out.
+    // (The stall test below only catches a bot that is pushing; this catches one that has been
+    // talked into standing still by a plan that is not working.)
+    if (Math.hypot(r.pos.x - m.anchor.x, r.pos.y - m.anchor.y) > 6 || this.holding) {
+      m.anchor = { ...r.pos };
+      m.anchorAt = t;
+    } else if (t - m.anchorAt > 3) {
+      m.anchor = { ...r.pos };
+      m.anchorAt = t;
+      if (m.target) m.blacklist.set(m.target, t + BLACKLIST_S);
+      m.target = null;
+      m.escapes++;
+      const cl = Math.hypot(r.pos.x, r.pos.y) || 1;
+      const out = rot({ x: -r.pos.x / cl, y: -r.pos.y / cl }, (m.escapes % 2 ? 1 : -1) * (Math.PI / 3));
+      m.escapeTo = clampField({ x: r.pos.x + out.x * 30, y: r.pos.y + out.y * 30 });
+      m.escapeUntil = t + ESCAPE_S;
+      return cmd;
+    }
     const asked = Math.max(Math.hypot(cmd.driveX, cmd.driveY), Math.abs(cmd.leftDrive + cmd.rightDrive) / 2);
     const moving = Math.hypot(r.vel.x, r.vel.y) > STALL_SPEED;
     if (asked < 0.3 || moving || this.pressing) {
@@ -356,6 +411,8 @@ export class OpponentBot {
 
   private think(world: World, r: RobotState, playerId: number): RobotCommand {
     this.pressing = false;
+    this.holding = false;
+    this.victim = playerId;
     const phase = world.match.phase;
     const game = this.game;
 
@@ -371,11 +428,17 @@ export class OpponentBot {
           const placing = this.bbPlaceIfLinedUp(world, r);
           if (placing) return placing;
         }
+        this.status = 'park';
+        this.holding = true;
         return this.drive(r, park, parkFace(game, r), 1);
       }
     }
 
-    if (this.team.defenderId === r.id) return this.defend(world, r, playerId);
+    if (this.team.defenderId === r.id) {
+      this.status = 'defend';
+      this.holding = true;
+      return this.defend(world, r, playerId);
+    }
     if (game === 'biobuzz') return this.bbPlay(world, r);
     if (game === 'chain') return this.chainPlay(world, r);
     return this.decodePlay(world, r);
@@ -461,98 +524,153 @@ export class OpponentBot {
 
   // ----------------------------------------------------------------- BIOBUZZ ----
 
+  /**
+   * BIOBUZZ. The shape of the game, measured rather than guessed (a robot parked on a grid
+   * with four POLLEN, fire held — see HANDOFF):
+   *  - a TURRET lands its shots from almost ANYWHERE on the up cell's side of the field, the
+   *    whole width of it, except right under the cell. So a turret bot holds fire the whole time
+   *    it is carrying and on that side — it scores while it collects — and only drives
+   *    somewhere to shoot when it has nothing better to do on the way.
+   *  - a DUMPER (turretless) has to be in a RING 14–38 in from the up cell, outboard of it; Aim
+   *    Assist turns the chassis while fire is held, so it is held only once in the ring.
+   *  - Aim Assist releases a shot only when it would land, so holding fire costs nothing.
+   *
+   * What the bot does with its hopper depends on what the build can do (`bbCaps`) — it drives
+   * the PLAYER'S build, so it may or may not carry NECTAR, have a turret, or have a Box Tube.
+   */
   private bbPlay(world: World, r: RobotState): RobotCommand {
     const m = this.mem;
     const t = world.time;
     const bb = world.biobuzz;
     const a = r.alliance;
     const hive = bb?.hives?.[a];
+    const caps = bbCaps(r);
     const teleop = world.match.phase === 'teleop';
     const left = world.match.phaseTimeLeft;
     const full = this.tune.fullGame;
-    const flowerTime = full && teleop && left <= BB_FLOWER_UNLOCK_S;
-    const canPlace = bbPlacePointLocal(r.spec) !== null;
-
+    const flowerTime = full && teleop && left <= BB_FLOWER_UNLOCK_S && caps.place !== null;
     const pollen = r.hopper.filter((c) => c !== 'red' && c !== 'blue').length;
     const nectar = r.hopper.filter((c) => c === a).length;
     const held = pollen + nectar;
+    // after the cue a Box Tube build keeps its NECTAR for the FLOWERS; otherwise it is ammunition
+    const shootable = pollen + (caps.nectarShot && !flowerTime ? nectar : 0);
+    const tipping = !hive || hive.tipping > 0;
+    const zone = hive ? bbZone(a, hive.up, caps) : null;
+    this.status = '';
 
-    // THE HUMAN PLAYER. One NECTAR per TIP, and the whole remaining stock from the 1:00 cue;
-    // it lands in our LOADING ZONE for us to collect. NECTAR is worth having all match — three
-    // of them in the up cell and three POLLEN tip it — so it is entered as soon as it is earned.
+    // THE HUMAN PLAYER: one NECTAR per TIP, the whole stock from the 1:00 cue — entered as soon
+    // as it is earned, whenever this build has a use for NECTAR at all
+    const wantsNectar = caps.nectarShot || caps.place !== null;
     const callNectar =
-      !!bb && full && this.team.bots[0] === this && bb.nectarStock[a] > 0 &&
-      (bb.nectarDue[a] > 0 || flowerTime) && world.tick - m.lastPress >= PRESS_EVERY * 2;
-    const withNectar = (cmd: RobotCommand): RobotCommand => {
+      !!bb && full && wantsNectar && this.team.bots[0] === this && bb.nectarStock[a] > 0 &&
+      (bb.nectarDue[a] > 0 || (teleop && left <= BB_FLOWER_UNLOCK_S)) && world.tick - m.lastPress >= PRESS_EVERY * 2;
+    // a TURRET scores on the move: hold fire whenever it is carrying and on the right side
+    const turretFire = this.tune.sharp && caps.turreted && shootable > 0 && !tipping && !!zone &&
+      zone.contains(r.pos) && !(flowerTime && nectar > 0);
+    const finish = (cmd: RobotCommand): RobotCommand => {
       if (callNectar) {
         cmd.bbNectar = true;
         m.lastPress = world.tick;
       }
+      if (turretFire) cmd.fire = true;
       return cmd;
     };
 
     // ── FLOWERS, after the 1:00 cue (G410: no NECTAR in a FLOWER before it) ──
-    const tips = hive ? bbWouldTip(world, hive.contents, pollen, nectar) : false;
-    if (flowerTime && canPlace && bb) {
+    if (flowerTime && bb) {
       if (nectar > 0) {
         const f = this.bestFlower(world, r, 'nectar');
-        if (f !== null) return withNectar(this.bbPlace(world, r, f, 'nectar', pollen));
+        if (f !== null) return finish(this.bbPlace(world, r, f, 'nectar', pollen));
       }
-      // a TIP the hopper can finish is worth more than a few owned-flower points
-      if (pollen > 0 && !tips) {
+      // POLLEN into a FLOWER we own only when the HIVE can no longer use it: late, and not a TIP
+      const tips = hive ? bbWouldTip(world, hive.contents, pollen, caps.nectarShot ? nectar : 0) : false;
+      if (pollen > 0 && !tips && left < 25) {
         const owned = this.bestFlower(world, r, 'pollen');
-        if (owned !== null) return withNectar(this.bbPlace(world, r, owned, 'pollen', pollen));
+        if (owned !== null) return finish(this.bbPlace(world, r, owned, 'pollen', pollen));
       }
     }
 
-    // our own NECTAR is worth picking up all match (the opponent's is refused — G408)
+    // ── WHAT TO PICK UP ──
+    const nectarUse = caps.nectarShot || (caps.place !== null && teleop && left <= BB_FLOWER_UNLOCK_S + 12);
     const wanted = (b: Artifact): boolean =>
-      b.state.kind === 'ground' && (b.color === 'red' || b.color === 'blue' ? b.color === a : true);
-    let target = this.pickElement(world, r, wanted);
-    // a FLOWER is a POLLEN store too: pull from the bottom of one we do not own
+      b.state.kind === 'ground' && (b.color === 'red' || b.color === 'blue' ? nectarUse && b.color === a : true);
+    const room = held < caps.cap;
+    let target = room ? this.pickElement(world, r, wanted, zone) : null;
     let pull: number | null = null;
-    if (full && bb && held < 4 && !flowerTime) {
+    if (room && full && bb && !flowerTime) {
       pull = this.bestRetrieve(world, r, target);
       if (pull !== null) target = null;
     }
 
-    const load = Math.min(4, this.tune.load + 1);
-    // after the cue, NECTAR is for the FLOWERS; only POLLEN is shot
-    const shootable = flowerTime && canPlace ? pollen : held;
-    const wantShoot =
-      shootable > 0 && (shootable >= load || (!target && pull === null) || tips || held >= 4);
-    if (!wantShoot || !hive || hive.tipping > 0) {
-      m.shootSince = null;
-      if (pull !== null) return withNectar(this.bbRetrieve(world, r, pull));
-      return withNectar(this.collect(world, r, target, true));
+    // ── SHOOT ──
+    const tipNow = hive ? bbWouldTip(world, hive.contents, pollen, caps.nectarShot ? nectar : 0) : false;
+    const load = caps.turreted ? caps.cap : Math.min(caps.cap, this.tune.load + 1);
+    const goShoot =
+      shootable > 0 && !tipping && !!zone &&
+      (shootable >= load || !room || (!target && pull === null) || tipNow);
+    if (goShoot && zone) {
+      m.target = null;
+      this.status = 'shoot';
+      // NOTHING LEAVING? Aim Assist only lets a shot go that will land, and from some spots —
+      // a bad angle, a robot in the way — nothing will. A hopper that has not got lighter in
+      // 1.5 s means move, not wait.
+      if (m.shootHop !== held) {
+        // something went: this spot works, so stop looking for another
+        if (held < m.shootHop) m.shootShift = 0;
+        m.shootHop = held;
+        m.shootLastAt = t;
+      } else if (zone.contains(r.pos) && t - m.shootLastAt > 1.5) {
+        m.shootShift = (m.shootShift + 1) % 4;
+        m.shootLastAt = t;
+      }
+      const spot = zone.spot(r.pos, this.slot, m.shootShift);
+      // AUTO: our own half (G402 bills a MAJOR for contact from the far side)
+      if (world.match.phase === 'auto') spot.x = ownSide(world, a) * Math.max(ownSide(world, a) * spot.x, 6);
+      const inZone = zone.contains(r.pos);
+      this.holding = inZone;
+      const cell = { x: a === 'red' ? -BB_HIVE_X : BB_HIVE_X, y: zone.cellY };
+      // a turret that is firing stays put; one that has been told to move (shift) moves
+      const stay = inZone && caps.turreted && m.shootShift === 0;
+      const cmd = this.drive(r, stay ? r.pos : spot, Math.atan2(cell.y - r.pos.y, cell.x - r.pos.x), 3);
+      // a DUMPER's fire button steers the chassis, so it is held only once in the ring
+      if (inZone) cmd.fire = true;
+      return finish(cmd);
+    }
+    m.shootSince = null;
+
+    // THE HIVE IS SWINGING and we are loaded: the other cell is about to be the up one, so be
+    // there when it lands rather than waiting where the old one was
+    const nearTarget = target && Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y) < 30;
+    if (this.tune.sharp && hive && hive.tipping > 0 && shootable >= Math.min(2, caps.cap) && !nearTarget && pull === null) {
+      this.status = 'reposition';
+      this.holding = true;
+      const next = bbZone(a, hive.up === 'south' ? 'north' : 'south', caps);
+      const cmd = this.drive(r, next.spot(r.pos, this.slot), r.heading, 3);
+      cmd.intake = true;
+      return finish(cmd);
     }
 
-    // ── SHOOT: BIOBUZZ has no auto-fire; the driver HOLDS fire and Aim Assist lets a shot go
-    //    only when it would land in the NEARER of our two cells. So stand where the nearer cell
-    //    IS the up cell, on its open (outboard) side, and hold the button. ──
+    if (pull !== null) {
+      this.status = 'pull';
+      return finish(this.bbRetrieve(world, r, pull));
+    }
+    if (target) {
+      this.status = 'collect';
+      return finish(this.collect(world, r, target, true));
+    }
+    // NOTHING LOOSE ANYWHERE: a coordinating team makes itself useful by getting in the way;
+    // anyone else waits on the scoring side where the next HIVE spill will land
+    if (this.tune.coordinate && this.victim) {
+      this.status = 'idle-defend';
+      return finish(this.defend(world, r, this.victim));
+    }
+    this.status = 'idle';
     m.target = null;
-    const spot = this.bbShootSpot(a, hive.up);
-    const d = Math.hypot(spot.x - r.pos.x, spot.y - r.pos.y);
-    if (d < 8) m.shootSince ??= t;
-    if (m.shootSince !== null && t - m.shootSince > 4) {
-      // nothing is going in from here (blocked, a jam) — collect more and come back
-      m.shootSince = null;
-      return withNectar(this.collect(world, r, target, true));
-    }
-    const cell = { x: a === 'red' ? -BB_HIVE_X : BB_HIVE_X, y: 0 };
-    const cmd = this.drive(r, spot, Math.atan2(cell.y - r.pos.y, cell.x - r.pos.x), 3);
-    cmd.fire = d < 14;
-    return withNectar(cmd);
-  }
-
-  /** outboard of the up cell (its mouth faces away from the pivot), on our own half, spread per bot */
-  private bbShootSpot(a: Alliance, up: 'north' | 'south'): Vec2 {
-    const s = up === 'south' ? -1 : 1;
-    const hx = a === 'red' ? -BB_HIVE_X : BB_HIVE_X;
-    const out = a === 'red' ? -1 : 1;
-    return this.slot === 0
-      ? { x: hx + out * 4, y: s * (BB_HIVE_CELL_DY + 26) }
-      : { x: hx + out * 16, y: s * (BB_HIVE_CELL_DY + 34) };
+    this.holding = true;
+    const wait = zone ? zone.spot(r.pos, this.slot) : idleSpot(this.game, world, a, this.slot);
+    const cmd = this.drive(r, wait, r.heading, 4);
+    cmd.intake = true;
+    return finish(cmd);
   }
 
   /**
@@ -610,27 +728,45 @@ export class OpponentBot {
     return { pos: { x: f.x - off.x, y: f.y - off.y }, heading };
   }
 
-  /** back the Box Tube onto flower `i` and press the placement button once it is in reach */
+  /**
+   * Back the Box Tube onto flower `i` and press the placement button once it is in reach.
+   * ⚠️ "CLOSE" IS NOT PROGRESS. A bot a few inches off the pose that the foot or a wall will not
+   * let any closer used to count as arriving forever and never place — so close-but-not-in-
+   * reach runs its own clock, and gives the flower up.
+   */
   private bbPlace(world: World, r: RobotState, i: number, kind: 'nectar' | 'pollen', pollen: number): RobotCommand {
     const m = this.mem;
+    const t = world.time;
     const key = `flower:${i}`;
+    this.status = `place-${kind}`;
     if (m.target !== key) {
       m.target = key;
       m.bestDist = Infinity;
-      m.lastProgressAt = world.time;
+      m.lastProgressAt = t;
+      m.nearSince = null;
     }
     const pose = this.placePose(r, i);
     const d = Math.hypot(pose.pos.x - r.pos.x, pose.pos.y - r.pos.y);
-    this.progress(world, d, 8);
-    const cmd = this.drive(r, pose.pos, pose.heading, 0.3, 0.06);
+    this.progress(world, d, 0);
+    const cmd = this.drive(r, pose.pos, pose.heading, 0.3, 0.08);
     if (bbFlowerInReach(world, r) === i) {
-      m.lastProgressAt = world.time; // lined up is progress, however long the stack takes
+      m.lastProgressAt = t; // lined up is progress, however long the stack takes
+      m.nearSince = null;
       this.pressing = true;
+      this.holding = true;
       if (world.tick - m.lastPress >= PRESS_EVERY) {
         m.lastPress = world.tick;
         // NECTAR first (it makes the FLOWER ours), then the POLLEN rides on the ownership
         if (kind === 'nectar') cmd.bbPlaceNectar = true;
         else if (pollen > 0) cmd.bbPlace = true;
+      }
+    } else if (d < 10) {
+      m.nearSince ??= t;
+      this.holding = true;
+      if (t - m.nearSince > 2.5) {
+        m.blacklist.set(key, t + BLACKLIST_S);
+        m.target = null;
+        m.nearSince = null;
       }
     }
     return cmd;
@@ -651,7 +787,8 @@ export class OpponentBot {
 
   /**
    * The FLOWER to pull POLLEN from, if one beats the nearest loose element: a POLLEN at the
-   * bottom (a NECTAR there locks it), not ours to lose, and not claimed by a teammate.
+   * bottom (a NECTAR there locks it), not ours to lose, and not claimed by a teammate. A stack
+   * is worth a longer drive than one loose element, the more so the taller it is.
    */
   private bestRetrieve(world: World, r: RobotState, ground: Target | null): number | null {
     const bb = world.biobuzz;
@@ -660,8 +797,7 @@ export class OpponentBot {
     const claimed = this.team.claimedBy(this);
     const groundD = ground ? Math.hypot(ground.pos.x - r.pos.x, ground.pos.y - r.pos.y) : Infinity;
     let best: number | null = null;
-    // a stack of pollen is worth a longer drive than one loose element
-    let bestD = groundD + 15;
+    let bestD = groundD;
     for (let i = 0; i < BB_FLOWERS.length; i++) {
       const key = `pull:${i}`;
       if (claimed.has(key) || this.blacklisted(world, key)) continue;
@@ -670,7 +806,9 @@ export class OpponentBot {
       if (flowerScore(stack, kindOf).owner === r.alliance) continue;
       if (world.match.phase === 'auto' && BB_FLOWERS[i].x * ownSide(world, r.alliance) < 0) continue;
       const p = this.pullPose(r, i).pos;
-      const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y);
+      let pollenIn = 0;
+      for (const id of stack) if (kindOf(id) === 'pollen') pollenIn++;
+      const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - 6 * Math.min(pollenIn, 4);
       if (d < bestD) {
         bestD = d;
         best = i;
@@ -679,16 +817,17 @@ export class OpponentBot {
     return best;
   }
 
-  /** nose square on the FLOWER foot, so the front sweeper sits on the retrieval opening */
+  /** a MOUTH square on the FLOWER foot, so its roller sits on the retrieval opening */
   private pullPose(r: RobotState, i: number): { pos: Vec2; heading: number; face: Vec2 } {
     const f = BB_FLOWERS[i];
     const n = FLOWER_MOUTH[f.wall];
     const out = BB_FLOWER_FOOT.deep - BB_FLOWER_D;
     const face = { x: f.x + n.x * out, y: f.y + n.y * out };
-    const front = bbFootprint(r.spec).front;
+    const toWall = Math.atan2(-n.y, -n.x);
+    const mouth = pickMouth(bbCaps(r).mouths, toWall, r.heading);
     return {
-      pos: { x: face.x + n.x * (front + 0.5), y: face.y + n.y * (front + 0.5) },
-      heading: Math.atan2(-n.y, -n.x),
+      pos: { x: face.x + n.x * (mouth.reach + 0.5), y: face.y + n.y * (mouth.reach + 0.5) },
+      heading: toWall - mouth.angle,
       face,
     };
   }
@@ -702,15 +841,25 @@ export class OpponentBot {
       m.bestDist = Infinity;
       m.lastProgressAt = t;
       m.pullSince = null;
+      m.nearSince = null;
     }
     const pose = this.pullPose(r, i);
     const d = Math.hypot(pose.pos.x - r.pos.x, pose.pos.y - r.pos.y);
     const aligned = d < 2.5 && Math.abs(wrapAngle(pose.heading - r.heading)) < 0.2;
     if (!aligned) {
       m.pullSince = null;
-      this.progress(world, d, 6);
-      const cmd = this.drive(r, pose.pos, pose.heading, 0.4, 0.06);
-      cmd.intake = d < 12;
+      this.progress(world, d, 0);
+      if (d < 8) {
+        // nearly there — the same close-is-not-progress clock as placing
+        m.nearSince ??= t;
+        this.holding = true;
+        if (t - m.nearSince > 2.5) {
+          m.blacklist.set(key, t + BLACKLIST_S);
+          m.target = null;
+        }
+      } else m.nearSince = null;
+      const cmd = this.drive(r, pose.pos, pose.heading, 0.4, 0.08);
+      cmd.intake = d < 14;
       return cmd;
     }
     // on the foot: lean in gently with the rollers running until the stack stops giving
@@ -719,11 +868,12 @@ export class OpponentBot {
       m.pullHopper = r.hopper.length;
     }
     m.lastProgressAt = t;
-    if (t - m.pullSince > 1.5) {
-      m.blacklist.set(key, t + BLACKLIST_S);
+    if (t - m.pullSince > 1.2 || r.hopper.length >= bbCaps(r).cap) {
+      m.blacklist.set(key, t + 3);
       m.target = null;
     }
     this.pressing = true;
+    this.holding = true;
     const cmd = this.drive(r, pose.face, pose.heading, 0, 0.15);
     const mag = Math.hypot(cmd.driveX, cmd.driveY);
     if (mag > 0.3) {
@@ -760,13 +910,16 @@ export class OpponentBot {
     }
     const d = Math.hypot(target.pos.x - r.pos.x, target.pos.y - r.pos.y);
     this.progress(world, d, 0);
+    const mouths = mouthsOf(this.game, r);
     // AGAINST A WALL: square up first, then drive straight in. Come at it on an angle and the
     // chassis corner reaches it before the sweeper does and just shoves it along the wall —
     // which is exactly where a human player's NECTAR and a GARDEN's POLLEN sit.
     const n = wallNormal(target.pos);
     if (n) {
-      const face = Math.atan2(-n.y, -n.x);
-      const reach = this.frontReach(r);
+      const toWall = Math.atan2(-n.y, -n.x);
+      const mouth = pickMouth(mouths, toWall, r.heading);
+      const face = toWall - mouth.angle;
+      const reach = mouth.reach;
       const rx = r.pos.x - target.pos.x;
       const ry = r.pos.y - target.pos.y;
       const along = rx * n.x + ry * n.y;
@@ -782,15 +935,12 @@ export class OpponentBot {
       cmd.intake = intake;
       return cmd;
     }
-    const face = Math.atan2(target.pos.y - r.pos.y, target.pos.x - r.pos.x);
+    // lead with whichever MOUTH needs the least turning (a front+back or side intake has two)
+    const dir = Math.atan2(target.pos.y - r.pos.y, target.pos.x - r.pos.x);
+    const face = dir - pickMouth(mouths, dir, r.heading).angle;
     const cmd = this.drive(r, target.pos, face, 0);
     cmd.intake = intake;
     return cmd;
-  }
-
-  /** chassis centre to the front of the intake */
-  private frontReach(r: RobotState): number {
-    return this.game === 'biobuzz' ? bbFootprint(r.spec).front : r.spec.length / 2 + 3;
   }
 
   /** stuck-on-target bookkeeping: no progress for `STUCK_S` ⇒ blacklist it for a while */
@@ -814,7 +964,13 @@ export class OpponentBot {
   }
 
   /** the nearest loose element this bot may legally and usefully chase, and no teammate is */
-  private pickElement(world: World, r: RobotState, wanted: (b: Artifact) => boolean): Target | null {
+  private pickElement(
+    world: World,
+    r: RobotState,
+    wanted: (b: Artifact) => boolean,
+    /** where the bot will have to take what it picks up (BIOBUZZ): nearer that is cheaper */
+    zone?: BbZone | null,
+  ): Target | null {
     const m = this.mem;
     const auto = world.match.phase === 'auto';
     const side = ownSide(world, r.alliance);
@@ -837,6 +993,18 @@ export class OpponentBot {
       if (inOpponentLoading(this.game, r.alliance, b.pos) && this.others.some((o) =>
         o.alliance !== r.alliance && Math.hypot(o.pos.x - b.pos.x, o.pos.y - b.pos.y) < 40)) continue;
       let d = Math.hypot(b.pos.x - r.pos.x, b.pos.y - r.pos.y);
+      if (zone) {
+        // the trip AFTER the pickup counts too, and so do the neighbours it brings in reach
+        if (!zone.contains(b.pos)) {
+          const z = zone.spot(b.pos, this.slot);
+          d += 0.35 * Math.hypot(z.x - b.pos.x, z.y - b.pos.y);
+        }
+        let near = 0;
+        for (const q of world.balls) {
+          if (q !== b && wanted(q) && Math.abs(q.pos.x - b.pos.x) < 12 && Math.abs(q.pos.y - b.pos.y) < 12) near++;
+        }
+        d -= 4 * Math.min(near, 3);
+      }
       // stick with the current target unless something is clearly closer (no dithering)
       if (key === m.target) d -= 8;
       // one sitting against an opponent is one you cannot reach without shoving it
@@ -975,10 +1143,21 @@ export class OpponentBot {
 
     const tank = r.spec.drivetrain === 'tank' || (r.spec.drivetrain === 'butterfly' && r.butterflyTank);
     if (tank) {
-      // no strafe: turn toward the travel direction and drive along the heading
-      const travel = d > arrive ? Math.atan2(dy, dx) : face;
-      const err = wrapAngle(travel - r.heading);
-      const fwd = (fx * Math.cos(r.heading) + fy * Math.sin(r.heading)) * Math.max(0, Math.cos(err));
+      // NO STRAFE: turn onto the line of travel and drive along it — FORWARDS or BACKWARDS,
+      // whichever the plan's facing asks for (a rear mouth, a Box Tube backed onto a FLOWER) or,
+      // failing that, whichever is the smaller turn. A tank that always drove nose-first spent
+      // half its match pirouetting.
+      const sp = Math.hypot(fx, fy);
+      let err: number;
+      let fwd = 0;
+      if (d > arrive && sp > 1e-6) {
+        const travel = Math.atan2(fy, fx);
+        const rev = Math.abs(wrapAngle(face - travel)) > Math.PI / 2;
+        err = wrapAngle((rev ? travel + Math.PI : travel) - r.heading);
+        fwd = sp * Math.max(0, Math.cos(err)) * (rev ? -1 : 1);
+      } else {
+        err = wrapAngle(face - r.heading);
+      }
       const w = clamp(err * 2.2, -1, 1) * vmax;
       cmd.leftDrive = clamp(fwd - w, -1, 1);
       cmd.rightDrive = clamp(fwd + w, -1, 1);
@@ -997,6 +1176,140 @@ export class OpponentBot {
     cmd.rotate = turn;
     return cmd;
   }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT THE ROBOT CAN DO — bots drive the PLAYER'S build, so nothing here is assumed
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** an intake mouth: which way it faces (robot frame) and how far out its roller is */
+interface Mouth {
+  angle: number;
+  reach: number;
+}
+
+function mouthsFromRects(rects: readonly { edge: string; x0: number; x1: number; y0: number; y1: number }[]): Mouth[] {
+  return rects.map((m) =>
+    m.edge === 'back'
+      ? { angle: Math.PI, reach: -m.x0 }
+      : m.edge === 'left'
+        ? { angle: Math.PI / 2, reach: m.y1 }
+        : m.edge === 'right'
+          ? { angle: -Math.PI / 2, reach: -m.y0 }
+          : { angle: 0, reach: m.x1 },
+  );
+}
+
+/** every intake mouth this robot has, per game (DECODE's is always the front funnel) */
+function mouthsOf(game: string, r: RobotState): Mouth[] {
+  const mouths =
+    game === 'biobuzz'
+      ? bbCaps(r).mouths
+      : game === 'chain'
+        ? mouthsFromRects(chainIntakeMouths(r.spec))
+        : [{ angle: 0, reach: r.spec.length / 2 + C.INTAKE_PRESETS[r.spec.intake].reach }];
+  return mouths.length ? mouths : [{ angle: 0, reach: r.spec.length / 2 }];
+}
+
+/** the mouth that can face field direction `dir` with the least turning from `heading` */
+function pickMouth(mouths: readonly Mouth[], dir: number, heading: number): Mouth {
+  let best = mouths[0];
+  let bestErr = Infinity;
+  for (const m of mouths) {
+    const err = Math.abs(wrapAngle(dir - m.angle - heading));
+    if (err < bestErr) {
+      bestErr = err;
+      best = m;
+    }
+  }
+  return best;
+}
+
+interface BbCaps {
+  /** a turret (or two) aims itself — it can shoot from anywhere on the right side, on the move */
+  turreted: boolean;
+  /** can hold and launch our own NECTAR (the Sniper's single turret cannot) */
+  nectarShot: boolean;
+  /** the Box Tube's placement point, robot frame, or null without one */
+  place: Vec2 | null;
+  mouths: Mouth[];
+  cap: number;
+}
+
+const capsCache = new WeakMap<RobotSpec, BbCaps>();
+/** what this BIOBUZZ build can do — read once per spec */
+function bbCaps(r: RobotState): BbCaps {
+  let c = capsCache.get(r.spec);
+  if (!c) {
+    const kind = bbLauncherOf(r.spec, 0).kind;
+    c = {
+      turreted: kind === 'turret' || kind === 'twinturret',
+      nectarShot: bbIntakeAccepts(r.spec, r.alliance, r.alliance),
+      place: bbPlacePointLocal(r.spec),
+      mouths: mouthsFromRects(bbMouths(r.spec)),
+      cap: bbHopperCap(r.spec),
+    };
+    capsCache.set(r.spec, c);
+  }
+  return c;
+}
+
+/**
+ * WHERE A SHOT LANDS FROM, for `a`'s HIVE with `up` raised — measured, not assumed: a robot
+ * parked on a 6-in grid with four POLLEN and fire held, counting what went in.
+ *  - TURRET: the whole up-cell side of the field from ~20 in out, bar a pocket right under the
+ *    cell (it cannot see the opening from below it).
+ *  - DUMPER: a ring about 14–38 in from the cell, outboard of it (the dump has a range).
+ */
+interface BbZone {
+  contains(p: Vec2): boolean;
+  /** the nearest good place to shoot from, given where the bot is */
+  spot(p: Vec2, slot: number, shift?: number): Vec2;
+  /** y of the up cell (its x is the HIVE's) */
+  cellY: number;
+}
+
+function bbZone(a: Alliance, up: 'north' | 'south', caps: BbCaps): BbZone {
+  const s = up === 'south' ? -1 : 1;
+  const hx = a === 'red' ? -BB_HIVE_X : BB_HIVE_X;
+  const cy = s * BB_HIVE_CELL_DY;
+  const lim = C.FIELD_HALF - 10;
+  if (caps.turreted) {
+    const under = (p: Vec2): boolean => Math.abs(p.x - hx) < 14 && s * p.y < 34;
+    return {
+      cellY: cy,
+      contains: (p) => s * p.y >= 20 && Math.abs(p.x) <= lim + 4 && Math.abs(p.y) <= lim + 4 && !under(p),
+      spot: (p, slot, shift = 0) => {
+        if (shift > 0) {
+          // the fallbacks, in turn: straight out from the cell, then out to either side of it
+          const alt = [
+            { x: hx, y: cy + s * 30 },
+            { x: hx - 24, y: cy + s * 24 },
+            { x: hx + 24, y: cy + s * 24 },
+          ][(shift - 1 + slot) % 3];
+          return { x: clamp(alt.x, -lim, lim), y: clamp(alt.y, -lim, lim) };
+        }
+        let y = s * Math.max(s * p.y, 28 + slot * 6);
+        const x = clamp(p.x, -lim, lim);
+        if (under({ x, y })) y = s * 38;
+        return { x, y: clamp(y, -lim, lim) };
+      },
+    };
+  }
+  return {
+    cellY: cy,
+    contains: (p) => {
+      const d = Math.hypot(p.x - hx, p.y - cy);
+      return d >= 16 && d <= 36 && s * (p.y - cy) >= 10;
+    },
+    spot: (p, slot, shift = 0) => {
+      // on the ring at the bearing the bot already has, kept outboard (and nudged per attempt)
+      const phi = clamp(Math.atan2(p.x - hx, s * (p.y - cy)), -0.8, 0.8) + (shift === 1 ? 0.5 : shift === 2 ? -0.5 : 0);
+      const R = 25 + slot * 4;
+      return { x: hx + R * Math.sin(phi), y: cy + s * R * Math.cos(phi) };
+    },
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

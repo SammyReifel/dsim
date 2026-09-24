@@ -22,7 +22,8 @@ import { botSetup } from '../src/bots/botSetup';
 import type { BotLevel } from '../src/bots/botConfig';
 import { ReplayRecorder, ReplayPlayer } from '../src/sim/replay';
 import { flowerScore } from '../src/games/biobuzz/flower';
-import type { GameId, RobotCommand, World } from '../src/types';
+import type { GameId, RobotCommand, RobotSpec, World } from '../src/types';
+import { BB_PRESET_LIST } from '../src/games/biobuzz/presets';
 
 await initPhysics();
 
@@ -38,6 +39,7 @@ const IDLE: RobotCommand = { driveX: 0, driveY: 0, rotate: 0, leftDrive: 0, righ
 
 interface Run {
   world: World;
+  longestStill: number;
   bots: OpponentBot[];
   travelled: Map<number, number>;
   outOfField: boolean;
@@ -54,18 +56,26 @@ function runMatch(
   n: number,
   level: BotLevel,
   seed: number,
-  opts: { player?: 'idle' | 'bot'; maxTicks?: number; partner?: BotLevel } = {},
+  opts: {
+    player?: 'idle' | 'bot';
+    playerLevel?: BotLevel;
+    maxTicks?: number;
+    partner?: BotLevel;
+    /** the PLAYER's build, which every bot mirrors (as `GameController` passes settings.spec) */
+    spec?: RobotSpec;
+  } = {},
 ): Run {
   const mod = simModuleFor(game);
-  const su = [botSetup(game, 0, 'blue', 0)];
-  for (let i = 0; i < n; i++) su.push(botSetup(game, 2 + i, 'red', i, { level }));
-  if (opts.partner) su.push(botSetup(game, 1, 'blue', 1, { level: opts.partner, name: 'Teammate' }));
+  const spec = opts.spec;
+  const su = [botSetup(game, 0, 'blue', 0, { spec })];
+  for (let i = 0; i < n; i++) su.push(botSetup(game, 2 + i, 'red', i, { level, spec }));
+  if (opts.partner) su.push(botSetup(game, 1, 'blue', 1, { level: opts.partner, name: 'Teammate', spec }));
   const w = mod.createWorld('match', seed, su);
   w.match.preCountdown = C.PRE_COUNTDOWN; // exactly what GameController.startMatch does
   const rec = new ReplayRecorder(seed, su, 'match', game);
   const bots = makeBots(su.filter((s) => s.alliance === 'red').map((s) => s.id), level);
   const mates = opts.partner ? makeBots([1], opts.partner, 1) : [];
-  const player = opts.player === 'bot' ? makeBots([0], 'normal')[0] : null;
+  const player = opts.player === 'bot' ? makeBots([0], opts.playerLevel ?? 'normal')[0] : null;
   const travelled = new Map<number, number>();
   let outOfField = false;
   let defendTicks = 0;
@@ -73,6 +83,9 @@ function runMatch(
   let maxRamp = 0;
   let rampDrained = false;
   let ticks = 0;
+  // the longest a RED bot sat still mid-match (the last 12 s are parking, and parked is still)
+  let longestStill = 0;
+  const stillSince = new Map<number, number>();
   const maxTicks = opts.maxTicks ?? Infinity;
   while (w.match.phase !== 'post' && ticks < maxTicks) {
     const cmds = new Map<number, RobotCommand>([[0, localizeCommand(player ? player.command(w, 2) : IDLE)]]);
@@ -82,6 +95,16 @@ function runMatch(
     rec.record(w.tick, cmds);
     ticks++;
     if ([...bots, ...mates].some((b) => b.team.defenderId != null)) defendTicks++;
+    const live = (w.match.phase === 'auto' || w.match.phase === 'teleop') &&
+      !(w.match.phase === 'teleop' && w.match.phaseTimeLeft < 12);
+    for (const b of bots) {
+      const rb = w.robots.find((x) => x.id === b.robotId)!;
+      if (live && Math.hypot(rb.vel.x, rb.vel.y) < 2) {
+        const since = stillSince.get(rb.id) ?? w.time;
+        stillSince.set(rb.id, since);
+        longestStill = Math.max(longestStill, w.time - since);
+      } else stillSince.delete(rb.id);
+    }
     const p = w.robots.find((r) => r.id === 0)!;
     for (const r of w.robots) {
       const q = before.get(r.id)!;
@@ -95,7 +118,7 @@ function runMatch(
       if (maxRamp >= 9 && ramp <= 4) rampDrained = true;
     }
   }
-  return { world: w, bots: [...bots, ...mates], travelled, outOfField, defendTicks, nearPlayer, maxRamp, rampDrained, recorder: rec };
+  return { world: w, bots: [...bots, ...mates], longestStill, travelled, outOfField, defendTicks, nearPlayer, maxRamp, rampDrained, recorder: rec };
 }
 
 const majors = (w: World): number => w.match.fouls.red.major;
@@ -197,6 +220,34 @@ replays('decode hard pair (45s)', runMatch('decode', 2, 'hard', 9, { player: 'bo
   const r = runMatch('biobuzz', 1, 'normal', 9, { partner: 'normal' });
   check('biobuzz teammate: tips the player’s hive', (r.world.biobuzz?.hives.blue.tips ?? 0) >= 2, `${r.world.biobuzz?.hives.blue.tips} tips`);
   check('biobuzz teammate: commits no majors', r.world.match.fouls.blue.major === 0, JSON.stringify(r.world.match.fouls.blue));
+}
+
+// BOTS DRIVE THE PLAYER'S BUILD — and play every kind of it: a turret that shoots on the move,
+// a tank dumper that has to find the ring, a rear-dumping hauler. None may sit still for long
+// (the reported "all the robots just stop moving"), and none may earn the player a MAJOR.
+for (const name of ['StarterBot', 'Sniper', 'Skimmer', 'Hauler']) {
+  const spec = BB_PRESET_LIST.find((p) => p.name === name)!;
+  const r = runMatch('biobuzz', 1, 'nightmare', 7, { spec });
+  const bot = r.world.robots.find((x) => x.id === 2)!;
+  const tips = r.world.biobuzz?.hives.red.tips ?? 0;
+  check(`biobuzz ${name}: the bot drives the player’s build`,
+    bot.spec.drivetrain === spec.drivetrain && bot.spec.scoreMode === spec.scoreMode && bot.spec.intakeMount === spec.intakeMount);
+  check(`biobuzz ${name}: tips its hive again and again`, tips >= 8, `${tips} tips, red ${redTotal(r.world)}`);
+  check(`biobuzz ${name}: never stands still for long`, r.longestStill < 6, `${r.longestStill.toFixed(1)}s`);
+  check(`biobuzz ${name}: no majors`, majors(r.world) === 0, JSON.stringify(r.world.match.fouls.red));
+}
+// THE LEVELS ARE A CURVE: against the same strong opponent, each level does better than the last
+{
+  const spec = BB_PRESET_LIST.find((p) => p.name === 'StarterBot')!;
+  const vs = (level: BotLevel): number =>
+    redTotal(runMatch('biobuzz', 1, level, 5, { spec, player: 'bot', playerLevel: 'nightmare' }).world);
+  const easy = vs('easy');
+  const normal = vs('normal');
+  const nightmare = vs('nightmare');
+  check('biobuzz levels: easy < normal < nightmare', easy < normal && normal < nightmare, `${easy} / ${normal} / ${nightmare}`);
+  const pair = runMatch('biobuzz', 2, 'nightmare', 5, { spec, player: 'bot', playerLevel: 'nightmare' });
+  check('biobuzz nightmare pair: beats a nightmare-level player on the same build',
+    redTotal(pair.world) > pair.world.match.scores.blue.total, `${redTotal(pair.world)} vs ${pair.world.match.scores.blue.total}`);
 }
 
 // ── CHAIN REACTION ──────────────────────────────────────────────────────────
