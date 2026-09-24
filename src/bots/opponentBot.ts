@@ -414,8 +414,6 @@ export class OpponentBot {
       m.target = null;
       m.escapes++;
       // a shooting spot we could not reach is not the spot: try the next one after this
-      m.shootShift = (m.shootShift % 3) + 1;
-      m.spotBest = Infinity;
       // FACE TO FACE WITH A ROBOT? Neither side will shove (a PIN is a MAJOR), so two polite
       // robots can stand nose to nose for the rest of the match. Back away from it, then.
       // Otherwise out toward open floor, swung one way or the other on alternate escapes.
@@ -435,9 +433,7 @@ export class OpponentBot {
         out = rot({ x: -r.pos.x / cl, y: -r.pos.y / cl }, (m.escapes % 2 ? 1 : -1) * (Math.PI / 3));
       }
       m.escapeTo = clampField({ x: r.pos.x + out.x * 30, y: r.pos.y + out.y * 30 });
-      // a TANK has to turn before it can go anywhere, so it gets longer to get clear
-      const tank = r.spec.drivetrain === 'tank' || (r.spec.drivetrain === 'butterfly' && r.butterflyTank);
-      m.escapeUntil = t + (tank ? 1.5 : ESCAPE_S);
+      m.escapeUntil = t + ESCAPE_S;
       return cmd;
     }
     const asked = Math.max(Math.hypot(cmd.driveX, cmd.driveY), Math.abs(cmd.leftDrive + cmd.rightDrive) / 2);
@@ -723,7 +719,8 @@ export class OpponentBot {
         if (ds < m.spotBest - 2) {
           m.spotBest = ds;
           m.spotAt = t;
-        } else if (t - m.spotAt > 1.1) {
+        } else if (t - m.spotAt > (isTank(r) ? 2.8 : 1.2)) {
+          // (a TANK turning on the spot to line up is not getting closer either, and is not stuck)
           m.shootShift = (m.shootShift % 3) + 1;
           m.spotBest = Infinity;
           m.spotAt = t;
@@ -1736,6 +1733,10 @@ function bbRoute(p: Vec2, to: Vec2): Vec2 {
     return best ?? to;
   }
   return to;
+}
+
+function isTank(r: RobotState): boolean {
+  return r.spec.drivetrain === 'tank' || (r.spec.drivetrain === 'butterfly' && r.butterflyTank);
 }
 
 function halfDiag(r: RobotState): number {
