@@ -5,8 +5,8 @@
  *
  * There is no "style" setting: the LEVEL decides how bots play. Easy and Normal just play the
  * game; Hard coordinates, and one of a pair drops back to defend whenever the player is
- * carrying something worth stopping; Nightmare plays flat out to WIN — it defends only once
- * it is ahead, so it can never lose by not scoring. Every level drives the PLAYER'S build.
+ * carrying something worth stopping; Nightmare plays flat out to WIN and never defends
+ * (measured: a defender cost it more than it denied), so it can never lose by not scoring. Every level drives the PLAYER'S build.
  */
 export type BotLevel = 'easy' | 'normal' | 'hard' | 'nightmare';
 
