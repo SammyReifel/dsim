@@ -15,8 +15,14 @@ import { adoptLanFromOrigin } from './net/lanAdopt';
 // Variable cuts, because shell.css asks for weights off the 100 grid (750).
 import '@fontsource-variable/plus-jakarta-sans';
 import '@fontsource-variable/space-grotesk';
+// the Parts Catalog chrome: Archivo's WIDTH axis (condensed catalog heads) and Martian Mono
+// for part numbers and data. The two above stay for the in-match HUD.
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/martian-mono/wdth.css';
 import './ui/styles.css';
 import './ui/shell.css';
+// the Parts Catalog's own components (cover, field plate, part rows, bot configurator)
+import './ui/catalog.css';
 
 // The inline script in index.html already stamped data-theme for the first paint.
 // This re-stamps from the same key and, when the pref is 'system', arms the

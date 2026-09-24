@@ -1,104 +1,833 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-05T00:00:00.000Z",
+  "generatedAt": "2026-09-24T18:39:18+00:00",
   "title": "Design System: DSIM",
   "extensions": {
     "colorMeta": {
-      "accent": { "role": "primary", "displayName": "Driver Green", "canonical": "#366758" },
-      "red-chip": { "role": "state", "displayName": "Alliance Red", "canonical": "#d32020" },
-      "blue-chip": { "role": "state", "displayName": "Alliance Blue", "canonical": "#1f6fe0" },
-      "gold": { "role": "state", "displayName": "Signal Gold", "canonical": "#f5a623" },
-      "ok": { "role": "state", "displayName": "Status Green", "canonical": "#2f9e5f" },
-      "on-field": { "role": "neutral", "displayName": "On-Field (canvas-only)", "canonical": "#f9faf7" },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#191c1b" },
-      "mut": { "role": "neutral", "displayName": "Mut (muted text)", "canonical": "#5c645f" }
+      "honey": {
+        "role": "primary",
+        "displayName": "Anodized Honey",
+        "canonical": "#f5b400",
+        "zoneNote": "fixed-ink fill; same in both themes",
+        "tonalRamp": [
+          "#4c3800",
+          "#856100",
+          "#bd8b00",
+          "#f5b400",
+          "#ffc933",
+          "#ffd970",
+          "#ffe9ad",
+          "#fff8e5"
+        ]
+      },
+      "honey-deep": {
+        "role": "primary",
+        "displayName": "Honey Deep",
+        "canonical": "#d49a00",
+        "zoneNote": "hover/press and border of a honey fill",
+        "tonalRamp": [
+          "#4c3800",
+          "#856000",
+          "#bd8900",
+          "#f5b200",
+          "#ffc733",
+          "#ffd870",
+          "#ffe9ad",
+          "#fff8e5"
+        ]
+      },
+      "honey-ink": {
+        "role": "primary",
+        "displayName": "Graphite on Honey",
+        "canonical": "#14171a",
+        "zoneNote": "ink on every honey fill",
+        "tonalRamp": [
+          "#21262b",
+          "#3a424b",
+          "#525e6b",
+          "#6a7a8a",
+          "#8c99a6",
+          "#aeb8c1",
+          "#d1d6dc",
+          "#f1f2f4"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Honey Type",
+        "canonical": "#7a4e00",
+        "zoneNote": "honey as text; dark theme #f5b400",
+        "tonalRamp": [
+          "#4c3100",
+          "#855500",
+          "#bd7900",
+          "#f59d00",
+          "#ffb533",
+          "#ffcb70",
+          "#ffe2ad",
+          "#fff6e5"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Honey Wash",
+        "canonical": "#ffe49a",
+        "zoneNote": "tint for selected rows; dark #3b2d06",
+        "tonalRamp": [
+          "#4c3800",
+          "#856100",
+          "#bd8a00",
+          "#f5b300",
+          "#ffc833",
+          "#ffd970",
+          "#ffe9ad",
+          "#fff8e5"
+        ]
+      },
+      "accent-soft-ink": {
+        "role": "primary",
+        "displayName": "Honey Wash Ink",
+        "canonical": "#4a3000",
+        "zoneNote": "text on the wash; dark #ffd35c",
+        "tonalRamp": [
+          "#4c3200",
+          "#855600",
+          "#bd7a00",
+          "#f59f00",
+          "#ffb733",
+          "#ffcd70",
+          "#ffe2ad",
+          "#fff6e5"
+        ]
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Graphite Plate",
+        "canonical": "#14171a",
+        "zoneNote": "masthead and code strip; dark #23282d",
+        "tonalRamp": [
+          "#21262b",
+          "#3a424b",
+          "#525e6b",
+          "#6a7a8a",
+          "#8c99a6",
+          "#aeb8c1",
+          "#d1d6dc",
+          "#f1f2f4"
+        ]
+      },
+      "plate-ink": {
+        "role": "neutral",
+        "displayName": "Plate Ink",
+        "canonical": "#eceff1",
+        "zoneNote": "text on the plate",
+        "tonalRamp": [
+          "#20272c",
+          "#38444c",
+          "#50616d",
+          "#687e8d",
+          "#8a9ca8",
+          "#adbac2",
+          "#d0d7dc",
+          "#f0f3f4"
+        ]
+      },
+      "plate-mut": {
+        "role": "neutral",
+        "displayName": "Plate Muted",
+        "canonical": "#a9b2ba",
+        "zoneNote": "secondary text on the plate",
+        "tonalRamp": [
+          "#22262a",
+          "#3b434a",
+          "#545f69",
+          "#6d7b88",
+          "#8e9aa4",
+          "#b0b8bf",
+          "#d2d6db",
+          "#f1f2f4"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Catalog Paper",
+        "canonical": "#eceff1",
+        "zoneNote": "page ground; dark #0f1215",
+        "tonalRamp": [
+          "#20272c",
+          "#38444c",
+          "#50616d",
+          "#687e8d",
+          "#8a9ca8",
+          "#adbac2",
+          "#d0d7dc",
+          "#f0f3f4"
+        ]
+      },
+      "bar": {
+        "role": "neutral",
+        "displayName": "Bar",
+        "canonical": "#f1f3f5",
+        "zoneNote": "footer band; dark #171b1f",
+        "tonalRamp": [
+          "#20262d",
+          "#37424d",
+          "#4f5e6e",
+          "#667a8f",
+          "#8899aa",
+          "#acb8c4",
+          "#cfd6dd",
+          "#f0f2f4"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "#ffffff",
+        "zoneNote": "cards, plate, ink of selected controls; dark #171b1f",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "tile": {
+        "role": "neutral",
+        "displayName": "Tile",
+        "canonical": "#f1f3f5",
+        "zoneNote": "recessed wells, hover tint; dark #0b0e10",
+        "tonalRamp": [
+          "#20262d",
+          "#37424d",
+          "#4f5e6e",
+          "#667a8f",
+          "#8899aa",
+          "#acb8c4",
+          "#cfd6dd",
+          "#f0f2f4"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#14171a",
+        "zoneNote": "text, heavy rules, selected fill; dark #eceff1",
+        "tonalRamp": [
+          "#21262b",
+          "#3a424b",
+          "#525e6b",
+          "#6a7a8a",
+          "#8c99a6",
+          "#aeb8c1",
+          "#d1d6dc",
+          "#f1f2f4"
+        ]
+      },
+      "ink-dim": {
+        "role": "neutral",
+        "displayName": "Graphite Dim",
+        "canonical": "#363d44",
+        "zoneNote": "lead copy; dark #c0c7cd",
+        "tonalRamp": [
+          "#22262b",
+          "#3b424a",
+          "#545e69",
+          "#6c7a88",
+          "#8d99a5",
+          "#afb8c0",
+          "#d2d6db",
+          "#f1f2f4"
+        ]
+      },
+      "mut": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#56606a",
+        "zoneNote": "secondary text; dark #8f99a2",
+        "tonalRamp": [
+          "#22262a",
+          "#3b4249",
+          "#555e68",
+          "#6e7a87",
+          "#8e99a4",
+          "#b0b8bf",
+          "#d2d6da",
+          "#f1f2f4"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#c3cad0",
+        "zoneNote": "row rules and panel borders; dark #2f373e",
+        "tonalRamp": [
+          "#22272b",
+          "#3a434a",
+          "#535f6a",
+          "#6c7c89",
+          "#8d9aa5",
+          "#afb8c0",
+          "#d1d7db",
+          "#f1f2f4"
+        ]
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Soft Hairline",
+        "canonical": "#d8dde1",
+        "zoneNote": "lightest table rules",
+        "tonalRamp": [
+          "#21272b",
+          "#3a434b",
+          "#52606b",
+          "#6a7c8a",
+          "#8c9aa6",
+          "#aeb9c1",
+          "#d1d7dc",
+          "#f1f2f4"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Control Edge",
+        "canonical": "#76828c",
+        "zoneNote": "unselected control border; dark #6d7882",
+        "tonalRamp": [
+          "#23272a",
+          "#3d4348",
+          "#565f67",
+          "#707b85",
+          "#909aa2",
+          "#b1b8be",
+          "#d3d7da",
+          "#f1f2f3"
+        ]
+      },
+      "red-chip": {
+        "role": "state",
+        "displayName": "Alliance Red",
+        "canonical": "#d32020",
+        "zoneNote": "fixed-ink fill, white ink",
+        "tonalRamp": [
+          "#420a0a",
+          "#731111",
+          "#a41919",
+          "#d52020",
+          "#e44e4e",
+          "#ec8383",
+          "#f4b8b8",
+          "#fce9e9"
+        ]
+      },
+      "blue-chip": {
+        "role": "state",
+        "displayName": "Alliance Blue",
+        "canonical": "#1f6fe0",
+        "zoneNote": "fixed-ink fill, white ink",
+        "tonalRamp": [
+          "#092143",
+          "#103a74",
+          "#1752a6",
+          "#1e6bd7",
+          "#4c8ce6",
+          "#82aeee",
+          "#b7d1f5",
+          "#e9f1fc"
+        ]
+      },
+      "red-ink": {
+        "role": "state",
+        "displayName": "Alliance Red Type",
+        "canonical": "#b3261e",
+        "zoneNote": "red as text; dark #ff9d96",
+        "tonalRamp": [
+          "#420e0b",
+          "#721813",
+          "#a2221b",
+          "#d22d23",
+          "#e25850",
+          "#eb8a85",
+          "#f3bcb9",
+          "#fbeae9"
+        ]
+      },
+      "blue-ink": {
+        "role": "state",
+        "displayName": "Alliance Blue Type",
+        "canonical": "#175cd3",
+        "zoneNote": "blue as text; dark #8cb8ff",
+        "tonalRamp": [
+          "#081e45",
+          "#0d3478",
+          "#134aaa",
+          "#1860dd",
+          "#4783eb",
+          "#7ea8f1",
+          "#b5cdf7",
+          "#e8f0fc"
+        ]
+      },
+      "ok": {
+        "role": "state",
+        "displayName": "OK Fill",
+        "canonical": "#2f9e5f",
+        "zoneNote": "status fill",
+        "tonalRamp": [
+          "#123b23",
+          "#1e663d",
+          "#2b9157",
+          "#38bd71",
+          "#62d092",
+          "#91deb2",
+          "#c0ecd3",
+          "#ebf9f1"
+        ]
+      },
+      "ok-ink": {
+        "role": "state",
+        "displayName": "OK Type",
+        "canonical": "#1f7a46",
+        "zoneNote": "status text; dark #4ec27f",
+        "tonalRamp": [
+          "#0f3d23",
+          "#1b6a3d",
+          "#269656",
+          "#32c370",
+          "#5cd690",
+          "#8de2b2",
+          "#beeed3",
+          "#ebfaf1"
+        ]
+      },
+      "danger": {
+        "role": "state",
+        "displayName": "Danger",
+        "canonical": "#ba1a1a",
+        "zoneNote": "destructive; dark #f2857f",
+        "tonalRamp": [
+          "#430909",
+          "#741010",
+          "#a61717",
+          "#d71e1e",
+          "#e64c4c",
+          "#ed8282",
+          "#f5b7b7",
+          "#fce9e9"
+        ]
+      },
+      "warn": {
+        "role": "state",
+        "displayName": "Warn",
+        "canonical": "#8f5400",
+        "zoneNote": "caution; dark #e0a437",
+        "tonalRamp": [
+          "#4c2d00",
+          "#854e00",
+          "#bd6f00",
+          "#f59000",
+          "#ffab33",
+          "#ffc470",
+          "#ffddad",
+          "#fff4e5"
+        ]
+      },
+      "gold": {
+        "role": "state",
+        "displayName": "Medal Gold",
+        "canonical": "#f5a623",
+        "zoneNote": "leaderboard placement only",
+        "tonalRamp": [
+          "#492f03",
+          "#7f5106",
+          "#b47408",
+          "#ea960b",
+          "#f6b03c",
+          "#f9c876",
+          "#fbdfb1",
+          "#fef5e7"
+        ]
+      },
+      "hud-line": {
+        "role": "hud",
+        "displayName": "HUD Edge",
+        "canonical": "#c0c9c4",
+        "zoneNote": "edge of cards over the field; dark #727d86",
+        "tonalRamp": [
+          "#232926",
+          "#3d4742",
+          "#57665e",
+          "#718479",
+          "#91a198",
+          "#b2bdb7",
+          "#d3d9d6",
+          "#f1f3f2"
+        ]
+      },
+      "on-field": {
+        "role": "canvas",
+        "displayName": "On-Field",
+        "canonical": "#f9faf7",
+        "zoneNote": "text straight on the canvas; never themes",
+        "tonalRamp": [
+          "#292f1d",
+          "#475233",
+          "#667449",
+          "#84975e",
+          "#a1b181",
+          "#bdc8a7",
+          "#d9e0cd",
+          "#f3f5ef"
+        ]
+      },
+      "on-field-dim": {
+        "role": "canvas",
+        "displayName": "On-Field Dim",
+        "canonical": "#b9beb8",
+        "zoneNote": "secondary canvas text",
+        "tonalRamp": [
+          "#252825",
+          "#40453f",
+          "#5c635a",
+          "#778075",
+          "#969e94",
+          "#b6bbb4",
+          "#d5d8d4",
+          "#f2f3f2"
+        ]
+      },
+      "on-field-accent": {
+        "role": "canvas",
+        "displayName": "On-Field Accent",
+        "canonical": "#5fb597",
+        "zoneNote": "canvas accent",
+        "tonalRamp": [
+          "#18342a",
+          "#2a5b4a",
+          "#3c8169",
+          "#4da788",
+          "#74bea4",
+          "#9dd2c0",
+          "#c7e5db",
+          "#eef7f4"
+        ]
+      },
+      "hud-accent": {
+        "role": "hud",
+        "displayName": "HUD Green",
+        "canonical": "#366758",
+        "zoneNote": "in-match accent pinned by .game-root; dark #5fb597",
+        "tonalRamp": [
+          "#1a322b",
+          "#2e574a",
+          "#417c6a",
+          "#54a189",
+          "#79b9a5",
+          "#a1cec0",
+          "#c9e3db",
+          "#eef6f4"
+        ]
+      },
+      "hud": {
+        "role": "hud",
+        "displayName": "HUD Card",
+        "canonical": "rgba(255, 255, 255, 0.94)",
+        "zoneNote": "dark rgba(39, 46, 53, 0.94)"
+      }
     },
     "typographyMeta": {
-      "ui": { "displayName": "Plus Jakarta Sans", "purpose": "All UI copy: labels, menus, prose, buttons." },
-      "data": { "displayName": "Space Grotesk", "purpose": "Live-updating numbers only: scores, timers, coordinates, ping. Always tabular-nums." }
+      "display": {
+        "displayName": "Cover Wordmark",
+        "purpose": "The DSIM wordmark on the cover only; the order button label is the same cut at 40px."
+      },
+      "headline": {
+        "displayName": "Page Head",
+        "purpose": "Page heads over a 3px graphite rule; the report head at 28px."
+      },
+      "title": {
+        "displayName": "Part Name",
+        "purpose": "Part-row names (24px); index rows 20px, rail tabs 17px, sub-nav 15px."
+      },
+      "section": {
+        "displayName": "Section Head",
+        "purpose": "Section heads over a 2px graphite rule."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptions and prose."
+      },
+      "body-lg": {
+        "displayName": "Lead",
+        "purpose": "The cover lead, capped at 40ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Spec terms, spec-row names, code key, stat labels; uppercase, muted."
+      },
+      "data": {
+        "displayName": "Reading",
+        "purpose": "Spec values, the setup code, chip numbers; tabular numerals."
+      },
+      "data-lg": {
+        "displayName": "Final Score",
+        "purpose": "The alliance scores on the report."
+      }
     },
     "shadows": [
-      { "name": "block", "value": "4px 4px 0 var(--ds-line-soft)", "purpose": "Flat resting shadow under panels/cards, no blur." },
-      { "name": "block-sm", "value": "2px 2px 0 var(--ds-line-soft)", "purpose": "Compact version for small panels/tooltips." },
-      { "name": "edge", "value": "0 3px 0 var(--ds-accent-edge)", "purpose": "Primary keycap's own thickness/rim." },
-      { "name": "edge-soft", "value": "0 3px 0 var(--ds-line)", "purpose": "Default keycap's rim." }
+      {
+        "name": "none (menus)",
+        "value": "0 0 0 transparent",
+        "purpose": "--ds-block, --ds-block-sm, --ds-edge and --ds-edge-soft all resolve to transparent outside .game-root. The catalog is flat."
+      },
+      {
+        "name": "hud-block",
+        "value": "4px 4px 0 var(--ds-line-soft)",
+        "purpose": "HUD only, restored by .game-root. Never in menus."
+      },
+      {
+        "name": "hud-block-sm",
+        "value": "2px 2px 0 var(--ds-line-soft)",
+        "purpose": "HUD only."
+      },
+      {
+        "name": "hud-edge",
+        "value": "0 3px 0 var(--ds-accent-edge)",
+        "purpose": "HUD only: the keycap edge under a pressable."
+      }
     ],
     "motion": [
-      { "name": "press", "value": "transform 0.06s ease, box-shadow 0.06s ease", "purpose": "Keycap hover/press response." },
-      { "name": "state-fade", "value": "border-color 0.15s, background 0.15s", "purpose": "Color/border transitions on hover, slower than the press itself." }
+      {
+        "name": "press",
+        "value": "transform 0.06s ease; translateY(1px)",
+        "purpose": "Every pressable seats 1px on :active, by transform only."
+      },
+      {
+        "name": "surface",
+        "value": "background/border-color 0.12s",
+        "purpose": "Hover changes fill or border colour, never border width."
+      },
+      {
+        "name": "arrow-slide",
+        "value": "transform 0.16s cubic-bezier(0.16, 1, 0.3, 1); translateX(4px)",
+        "purpose": "The order/index/part arrow on hover; removed under prefers-reduced-motion."
+      }
     ],
-    "breakpoints": []
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "480px"
+      },
+      {
+        "name": "phone",
+        "value": "640px"
+      },
+      {
+        "name": "tablet",
+        "value": "900px"
+      }
+    ],
+    "themes": {
+      "dark": {
+        "paper": "#0f1215",
+        "bar": "#171b1f",
+        "panel": "#171b1f",
+        "tile": "#0b0e10",
+        "ink": "#eceff1",
+        "ink-dim": "#c0c7cd",
+        "mut": "#8f99a2",
+        "line": "#2f373e",
+        "line-soft": "#000000",
+        "line-strong": "#6d7882",
+        "accent": "#f5b400",
+        "accent-ink": "#14171a",
+        "accent-soft": "#3b2d06",
+        "accent-soft-ink": "#ffd35c",
+        "plate": "#23282d",
+        "warn": "#e0a437",
+        "danger": "#f2857f",
+        "ok-ink": "#4ec27f",
+        "red-ink": "#ff9d96",
+        "blue-ink": "#8cb8ff",
+        "hud": "rgba(39, 46, 53, 0.94)",
+        "hud-line": "#727d86",
+        "hud-accent": "#5fb597"
+      }
+    },
+    "gameRootException": {
+      "scope": ".game-root (in-match HUD); .game-root .overlay and .net-overlay switch back to the catalog set",
+      "pins": {
+        "accent": "#366758 (dark #5fb597)",
+        "rounded": "4 / 8 / 12 / 16 / 24px",
+        "shadows": "hard offset block and edge",
+        "fontUi": "Plus Jakarta Sans Variable",
+        "fontData": "Space Grotesk Variable"
+      }
+    },
+    "checks": [
+      "npm run contrast (225 pairs, light + dark)",
+      "npm run uiaudit (ratchet: 4px grid, seven weights, whole-px sizes, no duplicate selectors, no undefined tokens)",
+      "npm run shiftaudit (transform-only presses)"
+    ]
   },
   "components": [
+    {
+      "name": "Masthead",
+      "kind": "nav",
+      "refersTo": "masthead",
+      "description": "Graphite plate band with the honey rule; the same in both themes.",
+      "html": "<header class=\"ds-mast\"><span class=\"ds-mast-mark\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 32 32\" fill=\"none\" aria-hidden=\"true\"><rect width=\"32\" height=\"32\" rx=\"4\" fill=\"#f5b400\"/><g stroke=\"#14171a\" stroke-width=\"2.5\" stroke-linecap=\"square\"><rect x=\"7\" y=\"10.5\" width=\"18\" height=\"14.5\" rx=\"1.5\"/><line x1=\"16\" y1=\"14.6\" x2=\"16\" y2=\"5.5\"/></g><circle cx=\"16\" cy=\"17.7\" r=\"3.1\" fill=\"#14171a\"/></svg>DSIM</span><span class=\"ds-mast-ed\">BIOBUZZ 2026–27</span></header>",
+      "css": ".ds-mast{display:flex;align-items:center;gap:16px;padding:12px 24px;min-height:63px;box-sizing:border-box;background:var(--ds-plate);color:var(--ds-plate-ink);border-bottom:3px solid var(--ds-honey);font-family:var(--ds-font-ui);} .ds-mast-mark{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:900;font-stretch:75%;text-transform:uppercase;letter-spacing:0.02em;line-height:1;} .ds-mast-ed{font-size:11px;font-weight:700;font-stretch:87.5%;letter-spacing:0.08em;color:var(--ds-honey);padding:4px 8px;border:1px solid var(--ds-honey);border-radius:2px;}"
+    },
+    {
+      "name": "Order Button",
+      "kind": "button",
+      "refersTo": "order-button",
+      "description": "The cover's one honey field: condensed label, one-line description, sliding arrow.",
+      "html": "<button class=\"ds-order\"><span class=\"ds-order-l\">Play</span><span class=\"ds-order-h\">Solo practice, bots, ranked and custom rooms</span><svg class=\"ds-order-arrow\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\"/></svg></button>",
+      "css": ".ds-order{font-family:var(--ds-font-ui);width:100%;max-width:480px;display:grid;grid-template-columns:1fr auto;grid-template-areas:\"l arrow\" \"h arrow\";align-items:center;column-gap:16px;row-gap:2px;padding:16px 24px;text-align:left;border:1px solid var(--ds-honey-deep);border-radius:3px;background:var(--ds-honey);color:var(--ds-honey-ink);cursor:pointer;transition:transform .06s ease,background .12s;} .ds-order:hover{background:var(--ds-honey-deep);} .ds-order:active{transform:translateY(1px);} .ds-order:focus-visible{outline:2px solid var(--ds-ink);outline-offset:2px;} .ds-order-l{grid-area:l;font-size:40px;line-height:1;font-weight:900;font-stretch:62%;text-transform:uppercase;} .ds-order-h{grid-area:h;font-size:13px;font-weight:600;} .ds-order-arrow{grid-area:arrow;width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;transition:transform .16s cubic-bezier(0.16,1,0.3,1);} .ds-order:hover .ds-order-arrow{transform:translateX(4px);}"
+    },
     {
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Main action button — accent-filled keycap.",
-      "html": "<button class=\"ds-btn-primary\">START MATCH</button>",
-      "css": ".ds-btn-primary { font-size: 14px; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: none; background: #366758; color: #ffffff; cursor: pointer; box-shadow: 0 3px 0 #24463b; transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.15s; } .ds-btn-primary:hover { background: #3d7565; box-shadow: 0 2px 0 #24463b; transform: translateY(1px); } .ds-btn-primary:active { box-shadow: 0 0 0 #24463b; transform: translateY(3px); }"
+      "description": "Honey fill with graphite ink; the next action in a panel.",
+      "html": "<button class=\"ds-btn-primary\">Start match</button>",
+      "css": ".ds-btn-primary{font-family:var(--ds-font-ui);font-size:14px;font-weight:600;padding:8px 16px;border-radius:3px;border:1px solid var(--ds-honey-deep);background:var(--ds-honey);color:var(--ds-honey-ink);cursor:pointer;transition:transform .06s ease,background .12s;} .ds-btn-primary:hover{background:var(--ds-honey-deep);} .ds-btn-primary:active{transform:translateY(1px);} .ds-btn-primary:focus-visible{outline:2px solid var(--ds-accent);outline-offset:2px;}"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Default keycap button — panel-toned.",
-      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
-      "css": ".ds-btn-secondary { font-size: 14px; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: 1px solid #c0c9c4; background: #ffffff; color: #191c1b; cursor: pointer; box-shadow: 0 3px 0 #c0c9c4; transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.15s; } .ds-btn-secondary:hover { border-color: #6f8f83; transform: translateY(1px); box-shadow: 0 2px 0 #c0c9c4; } .ds-btn-secondary:active { transform: translateY(3px); box-shadow: 0 0 0 #c0c9c4; }"
+      "description": "Sheet white with a control-edge border that sharpens to graphite on hover.",
+      "html": "<button class=\"ds-btn-secondary\">Share</button>",
+      "css": ".ds-btn-secondary{font-family:var(--ds-font-ui);font-size:14px;font-weight:600;padding:8px 16px;border-radius:3px;border:1px solid var(--ds-line-strong);background:var(--ds-panel);color:var(--ds-ink);cursor:pointer;transition:transform .06s ease,border-color .12s;} .ds-btn-secondary:hover{border-color:var(--ds-ink);} .ds-btn-secondary:active{transform:translateY(1px);} .ds-btn-secondary:focus-visible{outline:2px solid var(--ds-accent);outline-offset:2px;}"
     },
     {
-      "name": "Alliance Chip",
+      "name": "Part Row",
+      "kind": "custom",
+      "refersTo": "part-row",
+      "description": "A mode as a catalog part: ruled row, condensed name, muted description, arrow; the recommended one is honey.",
+      "html": "<div class=\"ds-parts\"><button class=\"ds-part primary\"><span class=\"ds-part-n\">Solo practice</span><span class=\"ds-part-d\">A full scored match against the bots you pick.</span><svg class=\"ds-part-a\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\"/></svg></button><button class=\"ds-part\"><span class=\"ds-part-n\">Free drive</span><span class=\"ds-part-d\">No clock and no score. Your bots come along.</span><svg class=\"ds-part-a\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h15M13 6l6 6-6 6\"/></svg></button></div>",
+      "css": ".ds-parts{display:flex;flex-direction:column;border-top:2px solid var(--ds-ink);font-family:var(--ds-font-ui);} .ds-part{font:inherit;display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr) auto;align-items:center;gap:16px;padding:16px 12px;border:0;border-bottom:1px solid var(--ds-line);background:none;color:var(--ds-ink);text-align:left;cursor:pointer;transition:background .12s,transform .06s ease;} .ds-part:hover{background:var(--ds-panel);} .ds-part:active{transform:translateY(1px);} .ds-part:focus-visible{outline:2px solid var(--ds-ink);outline-offset:2px;} .ds-part.primary{background:var(--ds-honey);color:var(--ds-honey-ink);border-bottom-color:var(--ds-honey-deep);} .ds-part.primary:hover{background:var(--ds-honey-deep);} .ds-part-n{font-size:24px;line-height:1;font-weight:800;font-stretch:75%;text-transform:uppercase;} .ds-part-d{font-size:13px;line-height:1.4;color:var(--ds-mut);} .ds-part.primary .ds-part-d{color:var(--ds-honey-ink);} .ds-part-a{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;transition:transform .16s cubic-bezier(0.16,1,0.3,1);} .ds-part:hover .ds-part-a{transform:translateX(4px);}"
+    },
+    {
+      "name": "Spec Selector",
+      "kind": "input",
+      "refersTo": "spec-value",
+      "description": "A spec row of 36px values; the chosen one is filled graphite, an unavailable one dashed.",
+      "html": "<div class=\"ds-spec\"><span class=\"ds-spec-n\">Opponents</span><div class=\"ds-spec-v\"><button class=\"ds-val on\">None</button><button class=\"ds-val\">1</button><button class=\"ds-val\">2</button></div></div>",
+      "css": ".ds-spec{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--ds-line);font-family:var(--ds-font-ui);} .ds-spec-n{font-size:12px;font-weight:700;font-stretch:87.5%;text-transform:uppercase;letter-spacing:0.06em;color:var(--ds-mut);} .ds-spec-v{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;} .ds-val{font:inherit;min-height:36px;padding:4px 8px;border:1px solid var(--ds-line-strong);border-radius:2px;background:var(--ds-panel);color:var(--ds-ink);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s,border-color .12s,color .12s,transform .06s ease;} .ds-val:hover{border-color:var(--ds-ink);} .ds-val:active{transform:translateY(1px);} .ds-val:focus-visible{outline:2px solid var(--ds-ink);outline-offset:2px;} .ds-val.on{background:var(--ds-ink);border-color:var(--ds-ink);color:var(--ds-panel);} .ds-val:disabled{cursor:not-allowed;color:var(--ds-mut);border-style:dashed;}"
+    },
+    {
+      "name": "Setup Code",
+      "kind": "custom",
+      "refersTo": "setup-code",
+      "description": "The whole configuration read back on a graphite strip, honey monospace value.",
+      "html": "<div class=\"ds-code\"><span class=\"ds-code-k\">Setup</span><span class=\"ds-code-v\">2 OPP · TEAMMATE · NORMAL</span></div>",
+      "css": ".ds-code{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:12px;border-radius:2px;background:var(--ds-plate);} .ds-code-k{font-family:var(--ds-font-ui);font-size:11px;font-weight:700;font-stretch:87.5%;text-transform:uppercase;letter-spacing:0.08em;color:var(--ds-plate-mut);} .ds-code-v{font-family:var(--ds-font-mono);font-size:13px;font-weight:600;color:var(--ds-honey);}"
+    },
+    {
+      "name": "Thumb-Index Rail",
+      "kind": "nav",
+      "refersTo": "rail-tab",
+      "description": "Hairline-ruled page tabs; the current page is honey and runs past the rail edge.",
+      "html": "<nav class=\"ds-rail2\"><button class=\"ds-rtab on\"><span class=\"ds-rtab-l\">Play</span><span class=\"ds-rtab-h\">Practice &amp; compete</span></button><button class=\"ds-rtab\"><span class=\"ds-rtab-l\">Configure</span><span class=\"ds-rtab-h\">Robot &amp; match setup</span></button><button class=\"ds-rtab\"><span class=\"ds-rtab-l\">Records</span><span class=\"ds-rtab-h\">Leaderboard &amp; career</span></button></nav>",
+      "css": ".ds-rail2{width:220px;display:flex;flex-direction:column;background:var(--ds-panel);border-right:1px solid var(--ds-line);border-top:1px solid var(--ds-line);font-family:var(--ds-font-ui);} .ds-rtab{position:relative;font:inherit;text-align:left;display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:0;border-bottom:1px solid var(--ds-line);background:none;color:var(--ds-ink);cursor:pointer;transition:background .14s,color .14s;} .ds-rtab:hover{background:var(--ds-tile);} .ds-rtab:focus-visible{outline:2px solid var(--ds-accent);outline-offset:2px;} .ds-rtab-l{font-size:17px;font-weight:800;font-stretch:75%;text-transform:uppercase;letter-spacing:0.02em;} .ds-rtab-h{font-size:12px;color:var(--ds-mut);} .ds-rtab.on{background:var(--ds-honey);color:var(--ds-honey-ink);} .ds-rtab.on .ds-rtab-h{color:var(--ds-honey-ink);} .ds-rtab.on::after{content:\"\";position:absolute;top:-1px;bottom:-1px;right:-8px;width:8px;background:var(--ds-honey);}"
+    },
+    {
+      "name": "Chip",
       "kind": "chip",
       "refersTo": "chip",
-      "description": "Alliance identity pill — filled solid, never tinted text.",
-      "html": "<span class=\"ds-chip-red\">RED</span>",
-      "css": ".ds-chip-red { font-family: 'Space Grotesk Variable', ui-monospace, monospace; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #d32020; color: #ffffff; font-weight: 700; }"
+      "description": "Small monospace tag; alliance variants are filled with white ink.",
+      "html": "<span class=\"ds-chip2\">PING <b>42</b></span> <span class=\"ds-chip2 red\">RED</span> <span class=\"ds-chip2 blue\">BLUE</span>",
+      "css": ".ds-chip2{font-family:var(--ds-font-mono);font-size:11px;display:inline-flex;align-items:center;gap:8px;padding:4px 8px;border-radius:2px;border:1px solid var(--ds-line-strong);color:var(--ds-ink);background:var(--ds-panel);} .ds-chip2 b{color:var(--ds-accent);font-variant-numeric:tabular-nums;} .ds-chip2.red{background:var(--ds-red-chip);border-color:transparent;color:#fff;} .ds-chip2.blue{background:var(--ds-blue-chip);border-color:transparent;color:#fff;}"
     },
     {
-      "name": "Card",
+      "name": "Report Sides",
       "kind": "card",
-      "refersTo": "card",
-      "description": "Flat panel with hard offset shadow, no blur.",
-      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Robot Setup</div><div class=\"ds-card-body\">Chassis, drivetrain, and intake configuration.</div></div>",
-      "css": ".ds-card { border: 1px solid #c0c9c4; border-radius: 8px; background: #ffffff; padding: 15px; box-shadow: 4px 4px 0 #d9dad8; } .ds-card-title { font-weight: 700; color: #191c1b; margin-bottom: 8px; } .ds-card-body { color: #5c645f; font-size: 14px; }"
-    },
-    {
-      "name": "Input Field",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "Recessed text field — inset top shadow, focus ring lives inside the recess.",
-      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Team number\" />",
-      "css": ".ds-input { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid #c0c9c4; background: #f3f4f1; color: #191c1b; box-shadow: inset 0 2px 0 rgba(25,28,27,0.07); } .ds-input:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #366758, inset 0 2px 0 rgba(25,28,27,0.07); }"
+      "refersTo": "report-side-red",
+      "description": "The results head: filled alliance blocks, monospace scores, winner ringed in honey.",
+      "html": "<div class=\"ds-rep\"><div class=\"ds-rep-s red win\"><span>RED</span><strong>112</strong></div><div class=\"ds-rep-v\">Red wins</div><div class=\"ds-rep-s blue\"><span>BLUE</span><strong>87</strong></div></div>",
+      "css": ".ds-rep{display:flex;align-items:center;gap:12px;font-family:var(--ds-font-ui);} .ds-rep-s{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:3px;padding:12px;color:#fff;} .ds-rep-s.red{background:var(--ds-red-chip);} .ds-rep-s.blue{background:var(--ds-blue-chip);} .ds-rep-s.win{outline:3px solid var(--ds-honey);outline-offset:2px;} .ds-rep-s span{font-weight:800;font-stretch:87.5%;letter-spacing:0.12em;font-size:13px;} .ds-rep-s strong{font-family:var(--ds-font-mono);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;} .ds-rep-v{font-weight:800;font-stretch:75%;font-size:18px;text-transform:uppercase;color:var(--ds-ink);min-width:74px;text-align:center;}"
     }
   ],
   "narrative": {
-    "northStar": "The Driver Station",
-    "overview": "DSIM's chrome is built to feel like the physical control box a real FTC team stands behind during a match, not a generic web app shell. Every interactive surface reads as a keycap — a flat colored cap sitting on a slightly darker edge, sinking on hover and pressing flush on click via transform, never layout-shifting margin. Data that a driver would glance at mid-match (scores, timers, coordinates, ping) is set in a monospace face with tabular numerals; everything else — labels, menu copy, prose — is set in a rounded-geometric sans. The palette spends most of its area in quiet desaturated neutrals so that the two colors reserved for competition state — alliance red and alliance blue — read as genuinely alarming the instant they appear, the way a real field-control light does.\n\nThe system is explicitly dual-theme (light/dark, user-toggled, WCAG-audited both ways via npm run contrast) and explicitly three-zone: chrome surfaces invert between themes, fixed-hue fills keep one ink regardless of theme (alliance chips, gold), and anything drawn on the game canvas itself uses a third, non-inverting family (on-field*) because the field mat is hardcoded dark in both themes.",
+    "northStar": "The Parts Catalog",
+    "overview": "DSIM's menus are pages from a robot-parts catalog for one game. Every mode is a part you order, every bot setting a spec you tick, and the home page is the catalog's cover: a huge condensed DSIM wordmark over a heavy rule, the season line, one honey-gold order button, an index of the other pages, a small spec table, and the real BIOBUZZ field drawn as a line plate with callouts. Results come back as a printed report. The world is cool white paper, graphite ink, hairline rules and graphite plate bands, with exactly one committed colour: anodized honey-gold, spent on the thing you should press next and on the page you are on.\n\nDensity is print-catalog, not dashboard: rows separated by 1px hairlines, heads sitting on heavy ink rules, corners of 2-3px, and no shadows at all. Depth comes from the plate band (the graphite masthead and the setup-code strip) and from rules, never from elevation. The system refuses two worlds by name: the neon esports launcher and the keycap toy box (the \"Driver Station\" world this replaced, with its offset block shadows and pressable keycaps).\n\n**The game part keeps its own look.** The in-match HUD was out of scope for this redesign and is pinned, inside `.game-root`, to the tokens it was designed and contrast-audited with: the green accent (`hud-accent`), 4-24px corners, hard offset block and edge shadows, and Plus Jakarta Sans / Space Grotesk. The overlays that sit inside the game root (results, pause, reconnect) are part of the menu flow, so `.game-root .overlay` switches them back to the catalog set. This split is deliberate; neither world should borrow from the other.\n\nThe system is dual-theme (light/dark, user-toggled, stamped on `<html>` as `data-theme`) and three-zone (see Colors). Both themes are audited by `npm run contrast` (225 pairs, all AA).",
     "keyCharacteristics": [
-      "Flat \"keycap\" pressables — offset hard shadow, no blur, moves via transform",
-      "Monospace-for-data / sans-for-copy split, enforced per component",
-      "Alliance red/blue are the only saturated, non-inverting accent — spend them like an alarm",
-      "Dual-theme by design token, not by override; a color either inverts, stays fixed, or belongs to the canvas — never guess which"
+      "One colour, honey-gold, used as a FILL with graphite ink; as type it becomes the themed `accent`.",
+      "A chosen value is filled graphite, like a ticked box in an option grid.",
+      "Condensed Archivo caps for every head; Martian Mono only for data.",
+      "Heavy rules under heads, 1px hairlines between rows, 2-3px corners, no shadows.",
+      "The masthead and code strip are graphite plate bands in both themes.",
+      "The HUD is a separate, older world, pinned by `.game-root`."
     ],
     "rules": [
-      { "name": "The Three-Zone Rule", "body": "Every color token belongs to exactly one of three zones: inverting, fixed-ink, or canvas-only. Reach for the wrong zone and the color either disappears in dark mode or silently changes what it signals.", "section": "colors" },
-      { "name": "The Fill-Is-Not-Text Rule", "body": "A color that works as a solid fill and a color that works as text on a surface are not the same token. Category collisions are split into a fill token and an -ink sibling.", "section": "colors" },
-      { "name": "The Digits-Are-Mono Rule", "body": "Any number that updates during a match renders in the mono data font with tabular numerals.", "section": "typography" },
-      { "name": "The No-Blur Rule", "body": "Nothing in this system uses a soft/blurred shadow. Depth is communicated by hard offset shadows or insets.", "section": "elevation" },
-      { "name": "The Transform-Only Press Rule", "body": "A pressable element must move via transform, never margin or border-width changes, so nothing in its neighborhood reflows on hover/press.", "section": "elevation" }
+      {
+        "name": "The One Honey Rule",
+        "body": "Honey is spent on what you should press next and where you are, nothing else: the order button, the one primary part row per list, the current rail tab. A page with two honey calls to action has lost its order button.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ticked-Box Rule",
+        "body": "A chosen value is filled graphite with sheet-white ink (option cards, spec values, segments, the current sub-nav tab). Selection is never honey; honey marks location and the next action, graphite marks a choice.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-Zone Rule",
+        "body": "Every colour token belongs to exactly one zone: *inverting* (readable against a themed surface: ink, mut, accent, warn, danger, the lines, the `-ink` siblings), *fixed-ink* (a fill whose meaning cannot change with theme: honey, alliance chips, gold, the plate), or *canvas-only* (`on-field*`, because the field never themes). Name the zone when you add a token.",
+        "section": "colors"
+      },
+      {
+        "name": "The Fill-Is-Not-Text Rule",
+        "body": "A colour that works as a fill and one that works as type are separate tokens. Honey is a fill and `accent` is its type; `ok` is a fill and `ok-ink` its type; `red-chip` is a fill and `red-ink` its type.",
+        "section": "colors"
+      },
+      {
+        "name": "The Condensed-Caps Head Rule",
+        "body": "Every head is Archivo uppercase at 800-900 with the width axis pulled in (62% display, 75% heads and part names, 87.5% section heads and labels). Width, not letter-spacing, is what makes them read as catalog type.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono-Is-A-Reading Rule",
+        "body": "Martian Mono sets numbers and codes a driver reads as a value, always with tabular numerals. Words, labels and prose are Archivo.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "Menu surfaces carry no `box-shadow` of any kind. If something needs to stand forward, give it a plate band, a heavier rule, or honey.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Transform-Only Press Rule",
+        "body": "A pressable moves by `transform` only (a 1px `translateY` on press, a 4px `translateX` on its arrow on hover). Hover changes border colour or background, never border width or margin, so nothing around it reflows. Enforced by `npm run shiftaudit`.",
+        "section": "elevation"
+      }
     ],
     "dos": [
-      "Do keep every new color token in exactly one zone — inverting, fixed-ink, or canvas-only — and name which zone it's in when you add it.",
-      "Do use --ds-hud-line (not --ds-line) for any border drawn on a floating HUD card over the field.",
-      "Do move pressables with transform/box-shadow only; run npm run shiftaudit after touching any interactive element's hover/active state.",
-      "Do run npm run contrast after any token edit — 175 pairs, light + dark, must stay AA.",
-      "Do set live-updating numbers in --ds-font-mono with tabular numerals."
+      "Do keep honey (#f5b400) a fill with graphite ink, and use `accent` when honey has to be text.",
+      "Do mark a selection with a graphite fill and sheet-white ink.",
+      "Do set heads in Archivo uppercase with the width axis at 62%, 75% or 87.5%, sitting on a 3px (page) or 2px (section) graphite rule.",
+      "Do separate list items with 1px hairlines instead of boxing each one.",
+      "Do keep every gap and padding on the 4px grid, every weight in 400/500/600/700/750/800/900, and every font size a whole pixel; `npm run uiaudit` ratchets all three and fails on any undefined token or duplicated selector.",
+      "Do run `npm run contrast` (225 pairs, light and dark) after any token edit, and name the zone (inverting, fixed-ink, canvas-only) of every new colour.",
+      "Do move pressables by `transform` only and run `npm run shiftaudit` after touching a hover or active state.",
+      "Do use `hud-line`, not `line`, for the edge of any card floating over the field or the game scrim.",
+      "Do leave `.game-root` pinned to the HUD's own accent, corners, shadows and fonts, and let `.game-root .overlay` switch the menu-flow overlays back to the catalog set."
     ],
     "donts": [
-      "Don't reach for --ds-blush, --ds-sage, or --ds-lavender — vestigial tokens from the pre-dark-mode pastel identity.",
-      "Don't add a blurred box-shadow anywhere in the chrome — this system has no soft-shadow vocabulary.",
-      "Don't tint alliance identity with text color alone — red/blue alliance meaning is carried by a filled chip, not a colored label.",
-      "Don't use --ds-ink/--ds-mut/--ds-accent for anything drawn directly on the game canvas — use the on-field* family."
+      "Don't add a `box-shadow`, blurred or offset, to any menu surface.",
+      "Don't round a menu component past 3px (6px for the report card).",
+      "Don't put a second honey call to action on a page, or use honey to show a selection.",
+      "Don't set words, labels or prose in Martian Mono.",
+      "Don't reach for `ink`, `mut` or `accent` when drawing straight onto the game canvas; use the `on-field` family.",
+      "Don't carry the HUD's green, keycap shadows or Plus Jakarta Sans / Space Grotesk into the menus, or catalog honey and hairlines into the HUD.",
+      "Don't fade the losing side of a result; mark the winner additively.",
+      "Don't extend `--ds-blush`, `--ds-sage`, `--ds-lavender` or `--ds-sky`; they are vestigial from the pastel world."
     ]
   }
 }

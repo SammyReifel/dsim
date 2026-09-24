@@ -32,7 +32,10 @@ export function NavRail({
   return (
     <nav className="ds-rail" aria-label="Main">
       <button className="ds-rail-home" onClick={() => onNav('home')}>
-        ← Home
+        <svg className="ci-arrow back" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12H5M11 6l-6 6 6 6" />
+        </svg>
+        Home
       </button>
       <div className="ds-rail-items">
         {RAIL_ITEMS.map((it) => (

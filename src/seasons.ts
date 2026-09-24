@@ -74,24 +74,6 @@ export interface Season {
 
 export const SEASONS: readonly Season[] = [
   {
-    key: 'decode',
-    name: 'DECODE',
-    presenter: 'RTX',
-    program: 'FIRST Tech Challenge',
-    years: '2025–26',
-    blurb: 'Classify artifacts into cross-court goals, match the motif, park on base.',
-    playable: true,
-  },
-  {
-    key: 'chain',
-    name: 'Chain Reaction',
-    presenter: 'goBILDA',
-    program: 'Unofficial FTC · CAD Competition',
-    years: '2026',
-    blurb: 'The 2026 Unofficial FTC CAD-competition game - a new shooter (rules to come).',
-    playable: true,
-  },
-  {
     // PUBLIC since 2026-09-13 (the promotion to production). It was alpha-only while it was
     // built before kickoff; `channels` is still the switch if a future season needs the same.
     key: 'biobuzz',
@@ -101,6 +83,32 @@ export const SEASONS: readonly Season[] = [
     years: '2026–27',
     blurb: 'Tip the HIVE, fill the FLOWERS and park, with a turret, a double turret or a dumper.',
     playable: true,
+  },
+  {
+    key: 'decode',
+    name: 'DECODE',
+    presenter: 'RTX',
+    program: 'FIRST Tech Challenge',
+    years: '2025–26',
+    blurb: 'Classify artifacts into cross-court goals, match the motif, park on base.',
+    playable: true,
+    // REMOVED FROM THE APP: this fork is BIOBUZZ-only. Visible on no channel, so no picker,
+    // URL, board or queue names it; the module stays registered because the shared sim
+    // falls back to it and old worlds and replays still resolve.
+    channels: [],
+  },
+  {
+    key: 'chain',
+    name: 'Chain Reaction',
+    presenter: 'goBILDA',
+    program: 'Unofficial FTC · CAD Competition',
+    years: '2026',
+    blurb: 'The 2026 Unofficial FTC CAD-competition game - a new shooter (rules to come).',
+    playable: true,
+    // REMOVED FROM THE APP: this fork is BIOBUZZ-only. Visible on no channel, so no picker,
+    // URL, board or queue names it; the module stays registered because the shared sim
+    // falls back to it and old worlds and replays still resolve.
+    channels: [],
   },
 ] as const;
 

@@ -41,7 +41,7 @@ export const DEFAULT_MOBILE_LAYOUT: GameSettings['mobileLayout'] = {
 
 export function defaultSettings(): GameSettings {
   return {
-    game: 'decode',
+    game: 'biobuzz',
     mode: 'match',
     alliance: 'blue',
     // the ACTIVE assists always MIRROR the robot's own (`spec.assists`) — all ON by default

@@ -108,6 +108,9 @@ export function AppShell({
         <button className="ds-mark" onClick={() => onNav('home')} aria-label={`${APP_NAME} home`}>
           <Logo size={24} />
           {APP_NAME}
+          <span className="ds-mark-ed">
+            {season.name} {season.years}
+          </span>
         </button>
         <div className="ds-bar-right">
           {/* the header is on EVERY menu screen, so this is the one placement that

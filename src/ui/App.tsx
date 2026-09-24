@@ -373,7 +373,7 @@ export function App() {
     // straight onto a season it must not name. Measured before the guard: the
     // home eyebrow read "BIOBUZZ presented by RTX" and the URL canonicalized to
     // /biobuzz, on a build whose picker does not list it.
-    const visible = gameVisible(s.game) ? s : switchGame(s, 'decode');
+    const visible = gameVisible(s.game) ? s : switchGame(s, 'biobuzz');
     if (isWebHistory) {
       const g = parsePath(window.location.pathname, visible.game).game;
       if (g !== visible.game) return switchGame(visible, g);

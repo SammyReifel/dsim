@@ -578,7 +578,7 @@ export function Menu({ settings, onChange }: Props) {
                       {INTAKE_SHORT[p.intake]} · {p.flywheelInertia} inertia
                       {p.canSort ? ' · sorter' : ''}
                     </span>
-                    <span className="oz">🎯 {optimizedZone(p.flywheelInertia)}</span>
+                    <span className="oz">{optimizedZone(p.flywheelInertia)}</span>
                   </>
                 ) : (
                   <>
@@ -589,7 +589,7 @@ export function Menu({ settings, onChange }: Props) {
                     </span>
                     {/* a turret is top-mounted, so naming its shooter mount would be noise */}
                     <span className="oz">
-                      🎯 {CHAIN_MODE_LABELS[p.scoreMode ?? CHAIN_DEFAULT_SCORE_MODE]}
+                      {CHAIN_MODE_LABELS[p.scoreMode ?? CHAIN_DEFAULT_SCORE_MODE]}
                       {!isTurreted(p.scoreMode ?? CHAIN_DEFAULT_SCORE_MODE)
                         ? ` · ${CHAIN_SHOOTER_MOUNT_LABELS[shooterMountOf(p)]}`
                         : ''}

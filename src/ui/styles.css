@@ -1345,8 +1345,16 @@ button {
 }
 
 .overlay-panel h2 {
-  letter-spacing: 3px;
-  font-size: 20px;
+  /* the report's head: condensed caps over a heavy rule, the catalog page head in small */
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--ds-ink);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .overlay-panel .big {
@@ -1373,42 +1381,39 @@ button {
 }
 
 .overlay-buttons button {
-  padding: 10px 22px;
+  padding: 12px 24px;
   border-radius: var(--ds-round);
-  border: 1px solid var(--border);
-  background: var(--ds-accent);
-  color: var(--ds-accent-ink);
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  border-color: transparent;
-  box-shadow: var(--ds-edge);
-  transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.15s;
+  border: 1px solid var(--ds-honey-deep);
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
+  font-weight: 800;
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  transition: transform 0.06s ease, background 0.12s;
 }
 
 .overlay-buttons button:hover {
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 var(--ds-accent-edge);
+  background: var(--ds-honey-deep);
 }
 
 .overlay-buttons button:active {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 var(--ds-accent-edge);
+  transform: translateY(1px);
 }
 
 /* secondary action in an overlay (e.g. "NOT NOW") — a neutral cap */
 .overlay-buttons button.ghost {
-  background: var(--panel-2);
-  color: var(--text);
-  border-color: var(--border);
-  box-shadow: var(--ds-edge-soft);
+  background: var(--ds-panel);
+  color: var(--ds-ink);
+  border-color: var(--ds-line-strong);
 }
 
 .overlay-buttons button.ghost:hover {
-  box-shadow: 0 2px 0 var(--ds-line);
+  background: var(--ds-panel);
+  border-color: var(--ds-ink);
 }
 
 .overlay-buttons button.ghost:active {
-  box-shadow: 0 0 0 var(--ds-line);
+  transform: translateY(1px);
 }
 
 .score-table {
@@ -1418,22 +1423,41 @@ button {
 }
 
 .score-table td {
-  padding: 4px 14px;
+  padding: 4px 12px;
   text-align: left;
+  border-bottom: 1px solid var(--ds-line-soft);
 }
 
 .score-table td:last-child {
   text-align: right;
+  font-family: var(--ds-font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
 
 .score-table .section-row td {
-  padding-top: 10px;
-  font-size: 10px;
+  padding-top: 12px;
+  font-family: var(--ds-font-ui);
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 2px;
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
   color: var(--muted);
+}
+
+/* the report's actions stay in reach: a results panel taller than the screen scrolls its
+   figures UNDER a pinned action row instead of pushing Rematch/Menu below the fold */
+.overlay-panel.results > .overlay-buttons {
+  position: sticky;
+  bottom: calc(-1 * clamp(18px, 5vw, 30px));
+  margin: 0 calc(-1 * clamp(14px, 6vw, 40px)) calc(-1 * clamp(18px, 5vw, 30px));
+  padding: 12px clamp(14px, 6vw, 40px);
+  background: var(--panel);
+  border-top: 1px solid var(--ds-line);
+  flex-wrap: wrap;
+}
+.overlay-panel.results > .overlay-buttons button {
+  flex: 1 1 auto;
 }
 
 .overlay-panel.results {
@@ -1447,18 +1471,18 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  border-radius: 10px;
-  padding: 10px;
+  gap: 12px;
+  border-radius: var(--ds-round);
+  padding: 12px;
   color: white;
 }
 
 .final-score.alliance-red {
-  background: linear-gradient(180deg, #7f1d1d, #991b1b);
+  background: var(--ds-red-chip);
 }
 
 .final-score.alliance-blue {
-  background: linear-gradient(180deg, #1e3a8a, #1d4ed8);
+  background: var(--ds-blue-chip);
 }
 
 .final-score span {
@@ -1468,7 +1492,8 @@ button {
 }
 
 .final-score strong {
-  font-size: 34px;
+  font-family: var(--ds-font-mono);
+  font-size: 32px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1497,32 +1522,38 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: var(--ds-round);
+  padding: 12px;
   color: white;
 }
 .res-side.win {
-  outline: 2px solid var(--amber);
+  outline: 3px solid var(--ds-honey);
+  outline-offset: 2px;
 }
 .res-side.red {
-  background: linear-gradient(180deg, #7f1d1d, #991b1b);
+  background: var(--ds-red-chip);
 }
 .res-side.blue {
-  background: linear-gradient(180deg, #1e3a8a, #1d4ed8);
+  background: var(--ds-blue-chip);
 }
 .res-side span {
   font-weight: 800;
-  letter-spacing: 2px;
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
   font-size: 13px;
 }
 .res-side strong {
+  font-family: var(--ds-font-mono);
   font-size: 32px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .res-verdict {
   font-weight: 800;
-  font-size: 13px;
-  color: var(--amber);
+  font-stretch: 75%;
+  font-size: 18px;
+  text-transform: uppercase;
+  color: var(--ds-ink);
   min-width: 74px;
   text-align: center;
 }
@@ -1538,8 +1569,9 @@ button {
 /* was a hardcoded #fff — stranded from the pre-redesign dark theme. `.overlay-panel` is
    `var(--panel)`, i.e. #ffffff in light mode, so the 58px run total was WHITE ON WHITE. */
 .record-total {
-  font-size: 58px;
-  font-weight: 800;
+  font-family: var(--ds-font-mono);
+  font-size: 56px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--ds-ink);
@@ -1570,11 +1602,11 @@ button {
   color: var(--muted);
 }
 .record-standing.wr {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.05));
-  outline: 1px solid var(--amber);
+  background: color-mix(in srgb, var(--ds-honey) 22%, var(--ds-panel));
+  outline: 1px solid var(--ds-honey-deep);
 }
 .record-standing.wr strong {
-  color: var(--amber);
+  color: var(--ds-ink);
 }
 .record-standing.pb {
   background: rgba(56, 189, 248, 0.1);
@@ -1626,6 +1658,13 @@ button {
   text-align: center;
   color: var(--muted);
   font-weight: 400;
+}
+/* both alliances' figures are DATA: the same mono, the same weight, the same ink */
+.results-table td.rv {
+  font-family: var(--ds-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ds-ink);
 }
 .results-table .section-row td {
   text-align: center;

@@ -23,11 +23,11 @@ const KEY_LABELS: Record<KeyAction, string> = {
   rotateCW: 'Turn right',
   intake: 'Intake (hold)',
   fire: 'Shoot (hold)',
-  catalyst: 'Catalyst pick up / place (Chain Reaction)',
-  fling: 'Catapult throw (Chain Reaction)',
-  bbPlaceNectar: 'Place NECTAR (BIOBUZZ)',
-  bbPlace: 'Place POLLEN (BIOBUZZ)',
-  bbNectar: 'Human player: enter NECTAR (BIOBUZZ)',
+  catalyst: 'Catalyst pick up / place',
+  fling: 'Catapult throw',
+  bbPlaceNectar: 'Place NECTAR',
+  bbPlace: 'Place POLLEN',
+  bbNectar: 'Human player: enter NECTAR',
   driveMode: 'Swap wheel set (Butterfly)',
   flipFront: 'Flip front',
   park: 'Toggle park mode',
@@ -38,17 +38,20 @@ const KEY_LABELS: Record<KeyAction, string> = {
 const PAD_LABELS: Record<PadAction, string> = {
   fire: 'Shoot (hold)',
   intake: 'Intake (hold)',
-  catalyst: 'Catalyst pick up / place (Chain Reaction)',
-  fling: 'Catapult throw (Chain Reaction)',
-  bbPlaceNectar: 'Place NECTAR (BIOBUZZ)',
-  bbPlace: 'Place POLLEN (BIOBUZZ)',
-  bbNectar: 'Human player: enter NECTAR (BIOBUZZ)',
+  catalyst: 'Catalyst pick up / place',
+  fling: 'Catapult throw',
+  bbPlaceNectar: 'Place NECTAR',
+  bbPlace: 'Place POLLEN',
+  bbNectar: 'Human player: enter NECTAR',
   driveMode: 'Swap wheel set (Butterfly)',
   flipFront: 'Flip front',
   park: 'Toggle park mode',
   start: 'Start match',
   restart: 'Restart',
 };
+
+/** Chain Reaction's own buttons: the app is BIOBUZZ-only, so they are bound but never listed */
+const CR_ONLY = new Set<string>(['catalyst', 'fling']);
 
 type Capture =
   | { kind: 'key'; action: KeyAction; slot: number }
@@ -161,7 +164,7 @@ export function ControlsSection({ bindings, onChange, onEditTouchControls }: Pro
         <div className="ds-bind-block">
           <h3>Keyboard</h3>
           <div className="ds-bind-grid">
-            {KEY_ACTIONS.map((a) => (
+            {KEY_ACTIONS.filter((a) => !CR_ONLY.has(a)).map((a) => (
               <div className="ds-bind-row" key={a}>
                 <span className="ds-bind-label">{KEY_LABELS[a]}</span>
                 <span className="ds-keys">
@@ -275,7 +278,7 @@ export function ControlsSection({ bindings, onChange, onEditTouchControls }: Pro
                 }
               />
             </div>
-            {PAD_ACTIONS.map((a) => (
+            {PAD_ACTIONS.filter((a) => !CR_ONLY.has(a)).map((a) => (
               <div className="ds-bind-row" key={a}>
                 <span className="ds-bind-label">{PAD_LABELS[a]}</span>
                 <span className="ds-keys">

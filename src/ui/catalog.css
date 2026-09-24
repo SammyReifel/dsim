@@ -1,0 +1,668 @@
+/* =====================================================================
+   THE PARTS CATALOG — DSIM's menu chrome (Sept 2026 redesign).
+
+   Every menu screen reads as a page from a robot-parts catalog: cool white paper,
+   graphite ink, hairline rules, 2–3px corners, no shadows, and ONE committed colour,
+   anodized honey-gold (`--ds-honey`), spent on the thing you should press next and the
+   page you are on. A chosen value is filled graphite, like a ticked box in an option grid.
+   Condensed Archivo caps set the heads; Martian Mono only sets real data.
+
+   The tokens live in shell.css (`:root`); this file holds the components that exist only
+   in this world. The in-match HUD keeps its own look (`.game-root` in shell.css).
+   ===================================================================== */
+
+/* the page you are on runs off the rail's edge into the page, like a printed thumb tab */
+.ds-rail-btn.on::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  right: -8px;
+  width: 8px;
+  background: var(--ds-honey);
+}
+.ds-mark-ed {
+  font-size: var(--ds-t-xs);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--ds-honey);
+  padding: 4px 8px;
+  border: 1px solid var(--ds-honey);
+  border-radius: var(--ds-round-sm);
+}
+@media (max-width: 640px) {
+  .ds-mark-ed {
+    display: none;
+  }
+}
+
+/* ── THE COVER (home) ───────────────────────────────────────────────── */
+.cat-cover {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--ds-s-6);
+  align-items: center;
+  padding: 32px 0 16px;
+}
+.cat-cover-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.cat-wordmark {
+  margin: 0;
+  font-size: clamp(104px, 15vw, 196px);
+  font-weight: 900;
+  font-stretch: 62%;
+  line-height: 0.8;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--ds-ink);
+}
+.cat-edition {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 3px solid var(--ds-ink);
+  font-size: var(--ds-t-md);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-ink);
+}
+.cat-cover-copy .ds-home-presents {
+  margin: 16px 0 0;
+}
+.cat-lead {
+  margin: 16px 0 24px;
+  max-width: 40ch;
+  font-size: var(--ds-t-lg);
+  line-height: 1.5;
+  color: var(--ds-ink-dim);
+}
+
+/* the ORDER button: the one honey field on the page */
+.cat-order {
+  font: inherit;
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'l arrow' 'h arrow';
+  align-items: center;
+  column-gap: var(--ds-s-4);
+  row-gap: 2px;
+  padding: 16px 24px;
+  text-align: left;
+  border: 1px solid var(--ds-honey-deep);
+  border-radius: var(--ds-round);
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.12s;
+}
+.cat-order:hover {
+  background: var(--ds-honey-deep);
+}
+.cat-order:active {
+  transform: translateY(1px);
+}
+.cat-order-l {
+  grid-area: l;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-s-3);
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 900;
+  font-stretch: 62%;
+  text-transform: uppercase;
+}
+.cat-order-h {
+  grid-area: h;
+  font-size: var(--ds-t-md);
+  font-weight: 600;
+}
+.cat-order-arrow,
+.ci-arrow,
+.cp-arrow {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: square;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cat-order-arrow {
+  grid-area: arrow;
+  width: 32px;
+  height: 32px;
+}
+.cat-order:hover .cat-order-arrow,
+.cat-index-row:hover .ci-arrow,
+.cat-part:hover:not(:disabled) .cp-arrow {
+  transform: translateX(4px);
+}
+
+/* the index: the other destinations, as rows under the order button */
+.cat-index {
+  width: 100%;
+  max-width: 480px;
+  margin-top: var(--ds-s-4);
+  border-top: 1px solid var(--ds-line-strong);
+}
+.cat-index-row {
+  font: inherit;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 128px 1fr auto;
+  align-items: center;
+  gap: var(--ds-s-3);
+  padding: 12px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--ds-line);
+  background: none;
+  color: var(--ds-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.cat-index-row:hover {
+  background: var(--ds-panel);
+}
+.ci-l {
+  font-size: 20px;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+.ci-h {
+  font-size: var(--ds-t-md);
+  color: var(--ds-mut);
+}
+.ci-arrow {
+  width: 20px;
+  height: 20px;
+  color: var(--ds-mut);
+}
+
+/* the spec table under it: what you are driving, and how busy the service is */
+.cat-spec {
+  width: 100%;
+  max-width: 480px;
+  margin: var(--ds-s-5) 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--ds-line);
+  border-left: 1px solid var(--ds-line);
+}
+.cat-spec > div {
+  padding: 8px 12px;
+  border-right: 1px solid var(--ds-line);
+  border-bottom: 1px solid var(--ds-line);
+  min-width: 0;
+}
+.cat-spec dt {
+  font-size: var(--ds-t-xs);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ds-mut);
+}
+.cat-spec dd {
+  margin: 2px 0 0;
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-t-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the plate: the field drawn as a catalog figure */
+.cat-plate {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px 24px;
+  background: var(--ds-panel);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-round);
+}
+.cat-plate figcaption {
+  margin-top: var(--ds-s-3);
+  padding-top: var(--ds-s-2);
+  border-top: 1px solid var(--ds-line);
+  font-size: var(--ds-t-sm);
+  color: var(--ds-mut);
+}
+.cat-cover-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-s-4);
+  flex-wrap: wrap;
+  padding-top: var(--ds-s-3);
+  border-top: 1px solid var(--ds-line);
+}
+
+@media (max-width: 900px) {
+  .cat-cover {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-s-5);
+    padding-top: 16px;
+  }
+  .cat-plate {
+    padding: 12px;
+  }
+}
+.ci-arrow.back {
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+}
+
+/* keep the plate's callouts at a readable size where the drawing gets small */
+@media (max-width: 640px) {
+  .fp-callout text {
+    font-size: 8px;
+  }
+  .fp-dim {
+    font-size: 6px;
+  }
+  /* the rail becomes a strip of four equal tabs: DSIM in the masthead is the way home */
+  .ds-rail-home {
+    display: none;
+  }
+  .ds-rail-items {
+    flex: 1;
+    min-width: 0;
+  }
+  .ds-rail-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+    padding: 8px 4px;
+  }
+  .ds-rail-btn .rl {
+    font-size: 15px;
+  }
+  .ds-rail-btn.on::after {
+    display: none;
+  }
+  .ds-subnav-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .ds-subnav-btn .sl {
+    font-size: 13px;
+    white-space: normal;
+    text-align: center;
+  }
+}
+@media (max-width: 480px) {
+  .cat-order-l {
+    font-size: 32px;
+  }
+  .cat-order {
+    padding: 12px 16px;
+  }
+  .cat-index-row {
+    grid-template-columns: 96px 1fr auto;
+  }
+}
+
+/* ── THE FIELD PLATE (FieldPlate.tsx) ───────────────────────────────── */
+.fp {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--ds-ink);
+}
+.fp-seams line {
+  stroke: var(--ds-line);
+  stroke-width: 0.35;
+}
+.fp-wall {
+  fill: none;
+  stroke: var(--ds-ink);
+  stroke-width: 1.4;
+}
+.fp-bar {
+  fill: var(--ds-ink);
+}
+.fp-hive-body {
+  fill: var(--ds-panel);
+  stroke: var(--ds-ink);
+  stroke-width: 0.6;
+}
+.fp-cell {
+  fill: var(--ds-tile);
+  stroke: var(--ds-ink);
+  stroke-width: 0.5;
+}
+.fp-cell.up {
+  fill: var(--ds-honey);
+  stroke: var(--ds-honey-deep);
+}
+.fp-pivot {
+  stroke: var(--ds-ink);
+  stroke-width: 0.4;
+  stroke-dasharray: 1.2 1;
+}
+.fp-lz,
+.fp-garden {
+  stroke-width: 0.6;
+}
+.fp-lz.red,
+.fp-garden.red {
+  fill: color-mix(in srgb, var(--ds-red-chip) 14%, transparent);
+  stroke: var(--ds-red-chip);
+}
+.fp-lz.blue,
+.fp-garden.blue {
+  fill: color-mix(in srgb, var(--ds-blue-chip) 14%, transparent);
+  stroke: var(--ds-blue-chip);
+}
+.fp-garden.red {
+  fill: var(--ds-red-chip);
+}
+.fp-garden.blue {
+  fill: var(--ds-blue-chip);
+}
+.fp-flower rect {
+  fill: var(--ds-ink);
+}
+.fp-flower circle {
+  fill: var(--ds-panel);
+  stroke-width: 0.8;
+}
+.fp-flower.red circle {
+  stroke: var(--ds-red-chip);
+}
+.fp-flower.blue circle {
+  stroke: var(--ds-blue-chip);
+}
+.fp-callout polyline {
+  fill: none;
+  stroke: var(--ds-mut);
+  stroke-width: 0.4;
+}
+.fp-callout circle {
+  fill: var(--ds-ink);
+}
+.fp-callout text,
+.fp-dim {
+  font-family: var(--ds-font-ui);
+  font-size: 5px;
+  font-weight: 700;
+  font-stretch: 75%;
+  letter-spacing: 0.06em;
+  fill: var(--ds-ink);
+}
+.fp-dim {
+  fill: var(--ds-mut);
+  font-size: 4px;
+}
+
+/* ── THE PLAY PAGE: modes as catalog part rows, the bots as a spec selector ── */
+.cat-h2 {
+  margin: 0;
+  padding: 0 0 8px;
+  border-bottom: 2px solid var(--ds-ink);
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-ink);
+}
+.cat-practice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-s-4);
+  margin-bottom: var(--ds-s-6);
+}
+.cat-parts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+section.cat-parts {
+  margin-bottom: var(--ds-s-6);
+}
+.cat-part {
+  font: inherit;
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ds-s-4);
+  padding: 16px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--ds-line);
+  background: none;
+  color: var(--ds-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.06s ease;
+}
+.cat-part:hover:not(:disabled) {
+  background: var(--ds-panel);
+}
+.cat-part:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.cat-part.primary {
+  background: var(--ds-honey);
+  color: var(--ds-honey-ink);
+  border-bottom-color: var(--ds-honey-deep);
+}
+.cat-part.primary:hover:not(:disabled) {
+  background: var(--ds-honey-deep);
+}
+.cat-part:disabled {
+  cursor: not-allowed;
+}
+.cp-name {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-s-2);
+  flex-wrap: wrap;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+.cat-part:disabled .cp-name {
+  color: var(--ds-mut);
+}
+.cp-desc {
+  font-size: var(--ds-t-md);
+  line-height: 1.4;
+  color: var(--ds-mut);
+}
+.cat-part.primary .cp-desc {
+  color: var(--ds-honey-ink);
+}
+.cp-why {
+  font-size: var(--ds-t-sm);
+  font-weight: 600;
+  color: var(--ds-mut);
+  white-space: nowrap;
+}
+
+.cat-configbox {
+  padding: 16px;
+  background: var(--ds-panel);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-round);
+  min-width: 0;
+}
+.cat-config {
+  display: flex;
+  flex-direction: column;
+}
+.cat-spec-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ds-s-3);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ds-line);
+}
+.cs-name {
+  font-size: var(--ds-t-sm);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-mut);
+}
+.cs-vals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-s-1);
+}
+.cs-vals.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.cat-val {
+  font: inherit;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--ds-line-strong);
+  border-radius: var(--ds-round-sm);
+  background: var(--ds-panel);
+  color: var(--ds-ink);
+  font-size: var(--ds-t-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.06s ease;
+}
+.cat-val:hover:not(:disabled) {
+  border-color: var(--ds-ink);
+}
+.cat-val:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.cat-val.on {
+  background: var(--ds-ink);
+  border-color: var(--ds-ink);
+  color: var(--ds-panel);
+}
+.cat-val:disabled {
+  cursor: not-allowed;
+  color: var(--ds-mut);
+  border-style: dashed;
+}
+.cat-val.on:disabled {
+  background: var(--ds-tile);
+  border-color: var(--ds-line-strong);
+  color: var(--ds-mut);
+}
+/* the whole configuration read back as one line, gold on the graphite plate */
+.cat-code {
+  margin: var(--ds-s-4) 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-s-3);
+  flex-wrap: wrap;
+  padding: 12px;
+  border-radius: var(--ds-round-sm);
+  background: var(--ds-plate);
+}
+.cc-k {
+  font-size: var(--ds-t-xs);
+  font-weight: 700;
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ds-plate-mut);
+}
+.cc-v {
+  font-family: var(--ds-font-mono);
+  font-size: var(--ds-t-md);
+  font-weight: 600;
+  color: var(--ds-honey);
+}
+.cat-note {
+  margin: var(--ds-s-3) 0 0;
+  font-size: var(--ds-t-md);
+  line-height: 1.45;
+  color: var(--ds-mut);
+}
+
+.cat-part:focus-visible,
+.cat-val:focus-visible,
+.cat-order:focus-visible,
+.cat-index-row:focus-visible {
+  outline: 2px solid var(--ds-ink);
+  outline-offset: 2px;
+}
+
+/* on the Play page the three specs sit side by side under the practice rows, the way a
+   catalog lays an option grid across the page; Configure → Match keeps them stacked */
+@media (min-width: 900px) {
+  .cat-configbox .cat-config {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.6fr) minmax(0, 1.2fr);
+    column-gap: var(--ds-s-5);
+  }
+  .cat-configbox .cat-spec-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-s-2);
+  }
+  .cat-configbox .cs-vals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cat-configbox .cs-vals.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .cat-configbox .cat-code,
+  .cat-configbox .cat-note {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .cat-part {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'name arrow' 'desc arrow';
+    row-gap: var(--ds-s-1);
+  }
+  .cp-name {
+    grid-area: name;
+  }
+  .cp-desc {
+    grid-area: desc;
+  }
+  .cp-arrow,
+  .cp-why {
+    grid-area: arrow;
+  }
+  .cp-why {
+    white-space: normal;
+    max-width: 16ch;
+    text-align: right;
+  }
+  .cat-spec-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-s-2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-order-arrow,
+  .ci-arrow,
+  .cp-arrow {
+    transition: none;
+  }
+}
