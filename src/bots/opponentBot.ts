@@ -137,6 +137,12 @@ export interface BotKnobs {
   shootStall: number;
   /** end AUTO parked in the LOADING ZONE (+5), clear of the wall (LEAVE stays) */
   autoPark: boolean;
+  /** a PAIR splits the field: slot 0 works near our HIVE, slot 1 fetches from far away */
+  roleSplit: boolean;
+  /** overrides for the level's own settings (undefined = the level decides) */
+  defendLead?: number;
+  starve?: boolean;
+  harass?: boolean;
 }
 
 export const DEFAULT_KNOBS: BotKnobs = {
@@ -149,6 +155,7 @@ export const DEFAULT_KNOBS: BotKnobs = {
   swingGrab: 30,
   shootStall: 1.5,
   autoPark: false,
+  roleSplit: false,
 };
 
 /** seconds without closing on a target before the bot gives up on it */
@@ -258,7 +265,7 @@ export class BotTeam {
       const lead = me && player
         ? world.match.scores[me.alliance].total - world.match.scores[player.alliance].total
         : 0;
-      if (player && threat(world, player) && lead >= TUNE[this.bots[0].level].defendLead) {
+      if (player && threat(world, player) && lead >= (first.knobs.defendLead ?? TUNE[first.level].defendLead)) {
         const near = (b: OpponentBot): number => {
           const r = world.robots.find((x) => x.id === b.robotId);
           return r ? Math.hypot(r.pos.x - player.pos.x, r.pos.y - player.pos.y) : Infinity;
@@ -816,7 +823,7 @@ export class OpponentBot {
     // and nothing close to pick up — then a few seconds in your way cost you more than us. Never
     // when behind late (every robot scores then), never so long it becomes a PIN (`defend`
     // backs off after 2.5 s of contact, and G421 needs 3).
-    if (this.tune.harass && teleop && left > 22 && !this.behindLate(world, r) && shootable === 0) {
+    if ((this.knobs.harass ?? this.tune.harass) && teleop && left > 22 && !this.behindLate(world, r) && shootable === 0) {
       const foe = world.robots.find((x) => x.id === this.victim && x.alliance !== a);
       const lead = this.margin(world, r);
       if (foe && t >= m.harassCooldown && threat(world, foe)) {
@@ -993,7 +1000,7 @@ export class OpponentBot {
       for (const id of stack) if (kindOf(id) === 'pollen') pollenIn++;
       let d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y) - this.knobs.pullStack * Math.min(pollenIn, 4);
       // STARVE: the flowers on the opponent's side are the ones feeding them
-      if (this.tune.starve && BB_FLOWERS[i].x * ownSide(world, r.alliance) < 0) d -= 12;
+      if ((this.knobs.starve ?? this.tune.starve) && BB_FLOWERS[i].x * ownSide(world, r.alliance) < 0) d -= 12;
       if (d < bestD) {
         bestD = d;
         best = i;
@@ -1189,7 +1196,14 @@ export class OpponentBot {
           if (q !== b && wanted(q) && Math.abs(q.pos.x - b.pos.x) < 12 && Math.abs(q.pos.y - b.pos.y) < 12) near++;
         }
         d -= this.knobs.cluster * Math.min(near, 3);
-        if (this.tune.starve) d -= this.denial(r, b.pos, d);
+        if (this.knobs.roleSplit && this.team.bots.length >= 2) {
+          // slot 0 farms round our HIVE, slot 1 fetches what lies further out
+          const hx = r.alliance === 'red' ? -BB_HIVE_X : BB_HIVE_X;
+          const dHive = Math.hypot(b.pos.x - hx, b.pos.y);
+          if (this.slot === 0 && dHive > 45) d += 25;
+          if (this.slot === 1 && dHive < 35) d += 25;
+        }
+        if ((this.knobs.starve ?? this.tune.starve)) d -= this.denial(r, b.pos, d);
         if (this.tune.sharp) {
           // NECTAR IS WORTH NEARLY THREE POLLEN to a build that can shoot it: 4 NECTAR + 1 POLLEN
           // tip the HIVE where 8 POLLEN are needed without it, and each TIP spills it back out to
