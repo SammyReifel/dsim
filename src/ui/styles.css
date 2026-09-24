@@ -1345,16 +1345,11 @@ button {
 }
 
 .overlay-panel h2 {
-  /* the report's head: condensed caps over a heavy rule, the catalog page head in small */
   margin: 0;
-  padding-bottom: 8px;
-  border-bottom: 3px solid var(--ds-ink);
-  font-size: 28px;
-  line-height: 1;
-  font-weight: 800;
-  font-stretch: 75%;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .overlay-panel .big {
@@ -1383,17 +1378,16 @@ button {
 .overlay-buttons button {
   padding: 12px 24px;
   border-radius: var(--ds-round);
-  border: 1px solid var(--ds-honey-deep);
-  background: var(--ds-honey);
-  color: var(--ds-honey-ink);
-  font-weight: 800;
-  font-stretch: 87.5%;
-  letter-spacing: 0.08em;
+  border: 1px solid var(--ds-ink);
+  background: var(--ds-ink);
+  color: var(--ds-panel);
+  font-weight: 700;
+  letter-spacing: 0.04em;
   transition: transform 0.06s ease, background 0.12s;
 }
 
 .overlay-buttons button:hover {
-  background: var(--ds-honey-deep);
+  background: var(--ds-ink-dim);
 }
 
 .overlay-buttons button:active {
@@ -1404,12 +1398,12 @@ button {
 .overlay-buttons button.ghost {
   background: var(--ds-panel);
   color: var(--ds-ink);
-  border-color: var(--ds-line-strong);
+  border-color: var(--ds-line);
 }
 
 .overlay-buttons button.ghost:hover {
-  background: var(--ds-panel);
-  border-color: var(--ds-ink);
+  background: var(--ds-tile);
+  border-color: var(--ds-line-strong);
 }
 
 .overlay-buttons button.ghost:active {
@@ -1438,10 +1432,9 @@ button {
 .score-table .section-row td {
   padding-top: 12px;
   font-family: var(--ds-font-ui);
-  font-size: 11px;
-  font-weight: 800;
-  font-stretch: 87.5%;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--muted);
 }
 
@@ -1527,7 +1520,7 @@ button {
   color: white;
 }
 .res-side.win {
-  outline: 3px solid var(--ds-honey);
+  outline: 2px solid var(--ds-honey);
   outline-offset: 2px;
 }
 .res-side.red {
@@ -1537,10 +1530,9 @@ button {
   background: var(--ds-blue-chip);
 }
 .res-side span {
-  font-weight: 800;
-  font-stretch: 87.5%;
-  letter-spacing: 0.12em;
-  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 12px;
 }
 .res-side strong {
   font-family: var(--ds-font-mono);
@@ -1549,10 +1541,8 @@ button {
   font-variant-numeric: tabular-nums;
 }
 .res-verdict {
-  font-weight: 800;
-  font-stretch: 75%;
-  font-size: 18px;
-  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 15px;
   color: var(--ds-ink);
   min-width: 74px;
   text-align: center;

@@ -1,34 +1,25 @@
-import type { GameSettings } from '../types';
-import type { BotLevel } from '../bots/botConfig';
+import type { GameSettings } from "../types";
+import type { BotLevel } from "../bots/botConfig";
 
 const COUNTS = [0, 1, 2] as const;
 const LEVELS: [BotLevel, string][] = [
-  ['easy', 'Easy'],
-  ['normal', 'Normal'],
-  ['hard', 'Hard'],
-  ['nightmare', 'Nightmare'],
+  ["easy", "Easy"],
+  ["normal", "Normal"],
+  ["hard", "Hard"],
+  ["nightmare", "Nightmare"],
 ];
 /** what each level does, in one line: the ladder is measured, so say what changes */
 const LEVEL_NOTE: Record<BotLevel, string> = {
-  easy: 'Easy bots drive slowly and wait for the hive to settle before they shoot.',
-  normal: 'Normal bots play the whole game at a steady pace.',
-  hard: 'Hard bots work as a team and play defence when you’re carrying.',
-  nightmare: 'Nightmare bots never play defence. Every second goes into outscoring you.',
+  easy: "Easy bots drive slowly and wait for the hive to settle before they shoot.",
+  normal: "Normal bots play the whole game at a steady pace.",
+  hard: "Hard bots work as a team and play defence when you’re carrying.",
+  nightmare:
+    "Nightmare bots never play defence. Every second goes into outscoring you.",
 };
 
-/** the configuration as a catalog ORDER CODE: every choice above, in one readable line */
-export function botOrderCode(s: GameSettings): string {
-  const n = s.opponentBots ?? 0;
-  const parts = [n === 0 ? 'NO OPPONENTS' : `${n} OPPONENT${n > 1 ? 'S' : ''}`];
-  if (s.botPartner) parts.push('+ TEAMMATE');
-  if (n > 0 || s.botPartner) parts.push(s.botLevel.toUpperCase());
-  return parts.join(' · ');
-}
-
 /**
- * The BOTS configurator (`src/bots/`): how many opponents, a teammate, and how hard — laid out
- * as a catalog SPEC SELECTOR, one row per spec, the chosen value filled graphite, and the
- * whole configuration read back underneath as an order code. One component so the Play page
+ * The BOTS configurator (`src/bots/`): how many opponents, a teammate, and how hard — three
+ * segmented controls and one line saying what the chosen level does. One component so the Play page
  * and Configure → Match can never disagree about the options. Bots play in the two OFFLINE
  * modes only — an online room has real people in it.
  *
@@ -48,7 +39,11 @@ export function BotOptions({
   const any = count > 0 || partner;
   return (
     <div className="cat-config">
-      <div className="cat-spec-row" role="radiogroup" aria-label="Opponent bots">
+      <div
+        className="cat-spec-row"
+        role="radiogroup"
+        aria-label="Opponent bots"
+      >
         <span className="cs-name">Opponents</span>
         <div className="cs-vals">
           {COUNTS.map((n) => (
@@ -56,10 +51,10 @@ export function BotOptions({
               key={n}
               role="radio"
               aria-checked={count === n}
-              className={`cat-val${count === n ? ' on' : ''}`}
+              className={`cat-val${count === n ? " on" : ""}`}
               onClick={() => onChange({ opponentBots: n })}
             >
-              {n === 0 ? 'None' : n}
+              {n === 0 ? "None" : n}
             </button>
           ))}
         </div>
@@ -70,7 +65,7 @@ export function BotOptions({
           <button
             role="radio"
             aria-checked={!partner}
-            className={`cat-val${!partner ? ' on' : ''}`}
+            className={`cat-val${!partner ? " on" : ""}`}
             onClick={() => onChange({ botPartner: false })}
           >
             None
@@ -78,7 +73,7 @@ export function BotOptions({
           <button
             role="radio"
             aria-checked={partner}
-            className={`cat-val${partner ? ' on' : ''}`}
+            className={`cat-val${partner ? " on" : ""}`}
             onClick={() => onChange({ botPartner: true })}
           >
             Bot
@@ -94,7 +89,7 @@ export function BotOptions({
               role="radio"
               aria-checked={settings.botLevel === k}
               disabled={!any}
-              className={`cat-val${settings.botLevel === k ? ' on' : ''}${k === 'nightmare' ? ' hot' : ''}`}
+              className={`cat-val${settings.botLevel === k ? " on" : ""}`}
               onClick={() => onChange({ botLevel: k })}
             >
               {label}
@@ -102,11 +97,11 @@ export function BotOptions({
           ))}
         </div>
       </div>
-      <p className="cat-code" aria-live="polite">
-        <span className="cc-k">Setup</span>
-        <span className="cc-v">{botOrderCode(settings)}</span>
+      <p className="cat-note">
+        {any
+          ? LEVEL_NOTE[settings.botLevel]
+          : "Just you and the field. Add opponents or a teammate above."}
       </p>
-      <p className="cat-note">{any ? LEVEL_NOTE[settings.botLevel] : 'Just you and the field. Add opponents or a teammate above.'}</p>
     </div>
   );
 }

@@ -1,6 +1,21 @@
+# HANDOFF — 2026-09-24, "Clean & calm" replaces the Parts Catalog
+
+**READ FIRST.** The owner saw the Parts Catalog live and called it "so busy and YUCK", then picked
+"Clean & calm" (Linear / Arc feel) over "sleek game launcher" and "revert".
+- **Same class structure, new skin.**
+  - Tokens (`shell.css` `:root`): soft neutrals, 8–12px corners, a faint 1px shadow, Archivo for
+    everything (`--ds-font-mono` points at Archivo too, so nothing reads as a typewriter).
+  - The primary button is INK; honey is only a small accent.
+  - `catalog.css` was rewritten: mode rows sit in list cards, the bots panel is three segmented
+    controls, and the "SETUP" code plate and the Home spec grid are gone.
+- **The in-match HUD is still pinned to its old look** by `.game-root`.
+- `contrast` (225) and `uiaudit` are green, and the build is green.
+- **DESIGN.md still describes the Parts Catalog.** Re-run the documenter (it is queued as the
+  follow-up PR).
+
 # HANDOFF — 2026-09-24, BIOBUZZ-only + the Parts Catalog redesign
 
-**READ FIRST.** `npm run build`, `server:check`, `test:bots` (63), `test:bb` (1304), `contrast`
+**(Superseded by the section above.)** `npm run build`, `server:check`, `test:bots` (63), `test:bb` (1304), `contrast`
 (225) and `uiaudit` are all green. `npm test` was NOT run, and nothing in `src/sim/` changed.
 
 **Ask:** "remove decode and chain reaction and use the frontend design skill to overhaul the UI flow
