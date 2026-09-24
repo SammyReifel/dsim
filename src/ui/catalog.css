@@ -115,7 +115,7 @@
   display: flex;
   align-items: center;
   gap: var(--ds-s-3);
-  font-size: 40px;
+  font-size: clamp(34px, 5vw, 52px);
   line-height: 1;
   font-weight: 900;
   font-stretch: 62%;
@@ -175,7 +175,7 @@
   background: var(--ds-panel);
 }
 .ci-l {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 800;
   font-stretch: 75%;
   text-transform: uppercase;
@@ -310,9 +310,6 @@
   }
 }
 @media (max-width: 480px) {
-  .cat-order-l {
-    font-size: 32px;
-  }
   .cat-order {
     padding: 12px 16px;
   }
