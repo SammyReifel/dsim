@@ -1,6 +1,29 @@
+# HANDOFF — 2026-09-24, spill ambush (BIOBUZZ Nightmare)
+
+**READ FIRST.** `npm run build` and `npm run test:bots` (63) are green. `npm test` was NOT run. Only
+`src/bots/opponentBot.ts` changed.
+
+**Finding** (`spill.mts` in the scratchpad tracks every `HIVE SPILLS` event): about 45% of each
+alliance's spill was picked up by the OTHER alliance, and our own bots took a median 3–6 s to reach
+theirs. The field only has 40 POLLEN, so a spill is the contested resource.
+
+**Done:**
+- **Spill ambush** (`spillWait`, `spillY` 34): while our HIVE is swinging but has not yet
+  released, an empty bot waits where the spill lands, mouth to the hive, one bot each side of it.
+  Own pickup median fell from 3–6 s to 0.5 s.
+- **Spill steal** (`spillSteal`): the same move at the OPPONENT'S spill when ours is not coming.
+  It is never used in AUTO, because their spill lands on their half (G402). Measured +13.7 on its
+  own (+30 on Sniper).
+- Combined against the PR #8 brain: **+29.1 ±8.5 a match, 33/44 wins, +55 on Sniper**. That figure
+  includes PR #9's +18.9. `base/prev.ts` is now refreshed to PR #9.
+
+**Next:** dumpers (StarterBot) gained nothing from the ambush. A dumper must still drive to the ring
+after collecting, so it may be better to ambush the spill near the NEXT up side. Also untried:
+choosing between steal and own ambush by distance.
+
 # HANDOFF — 2026-09-24, latest (Nightmare: no defence, parking, bar scraping)
 
-**READ FIRST.** `npm run build` and `npm run test:bots` (63 checks) are green. `npm test` was NOT
+**(Superseded by the section above.)** `npm run build` and `npm run test:bots` (63 checks) are green. `npm test` was NOT
 run. Only `src/bots/`, `src/ui/BotOptions.tsx` (one line of copy) and `scripts/botsmoke.ts` changed.
 
 **Owner report:** beat Nightmare 536–491 with a single-turret pollen-only build. The gap was 2

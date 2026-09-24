@@ -142,6 +142,11 @@ export interface BotKnobs {
   preFire: number;
   /** the same lead for a DUMPER, whose lob spends longer in the air */
   preFireDump: number;
+  /** empty bots wait where our own spill lands, intake to the HIVE (the mouth line, in from the wall) */
+  spillWait: boolean;
+  /** ...and at the OPPONENT'S spill, when ours is not coming */
+  spillSteal: boolean;
+  spillY: number;
   /** end AUTO parked in the LOADING ZONE (+5), clear of the wall (LEAVE stays) */
   autoPark: boolean;
   /** top up during a HIVE swing only with pickups that still get us back in time */
@@ -167,6 +172,9 @@ export const DEFAULT_KNOBS: BotKnobs = {
   shootStall: 1.5,
   preFire: 0.4,
   preFireDump: 0.9,
+  spillWait: true,
+  spillSteal: true,
+  spillY: 34,
   autoPark: false,
   swingPlan: true,
   teamTip: true,
@@ -893,6 +901,33 @@ export class OpponentBot {
       return finish(cmd);
     }
     m.shootSince = null;
+
+    // THE SPILL AMBUSH. A TIP dumps eight elements out of the cell that just filled, two seconds
+    // after it starts, rolling OUTBOARD — and measured, nearly half of every spill used to be
+    // picked up by the OTHER alliance, while our own bots took a median 3–6 s to get to theirs.
+    // So an empty bot does not wander off during the swing: it waits where the spill lands,
+    // mouth to the HIVE, and the elements roll into it.
+    // THEIRS TOO: when their HIVE is about to dump and ours is not, the same wait at THEIR spill
+    // is a point for us and one less for them — the field only has forty POLLEN.
+    const opp: Alliance = a === 'red' ? 'blue' : 'red';
+    const theirs = bb?.hives?.[opp];
+    const ours = !!hive && hive.tipping > 0 && !hive.released;
+    const steal = K.spillSteal && !ours && !!theirs && theirs.tipping > 0 && !theirs.released;
+    const ambush = ours ? hive : steal ? theirs : null;
+    // (not THEIR spill in AUTO: it lands on their half, and G402 is a MAJOR)
+    if ((ours ? K.spillWait : steal) && ambush && this.tune.sharp && room && shootable <= 1 && !flowerTime &&
+      (ours || world.match.phase !== 'auto')) {
+      const s = ambush.up === 'north' ? 1 : -1;
+      const hx = (ours ? a : opp) === 'red' ? -BB_HIVE_X : BB_HIVE_X;
+      const n = this.team.bots.length;
+      const mouth = pickMouth(caps.mouths, -s * Math.PI / 2, r.heading);
+      const spot = { x: hx + (n > 1 ? (this.slot === 0 ? -8 : 8) : 0), y: s * (K.spillY + mouth.reach) };
+      m.target = null;
+      this.status = ours ? 'ambush' : 'steal';
+      const cmd = this.drive(r, spot, -s * Math.PI / 2 - mouth.angle, 2);
+      cmd.intake = true;
+      return finish(cmd);
+    }
 
     // THE HIVE IS SWINGING and we are loaded: the other cell is about to be the up one, so be
     // there when it lands rather than waiting where the old one was
